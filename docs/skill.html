@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Install the OpenEuroLLM post-training evaluation Agent Skill for Codex and Claude Code">
+  <title>OpenEuroLLM · Post-training evaluation skill</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="hero skill-hero">
+    <nav><a class="wordmark" href="./">OPENEUROLLM / EVAL</a><div class="nav-links"><a href="./">Dashboard</a><a href="https://github.com/BirgerMoell/post-training-eval">Repository ↗</a></div></nav>
+    <div class="hero-grid">
+      <div>
+        <p class="eyebrow">PORTABLE AGENT SKILL</p>
+        <h1>One playbook.<br><span>Two agents.</span></h1>
+      </div>
+      <p class="intro">Give Codex or Claude Code the same reproducible workflow for hardware preflight, checkpoint evaluation, evidence normalization, regression gates, and dashboard publication.</p>
+    </div>
+  </header>
+
+  <main class="skill-main">
+    <section class="skill-intro panel">
+      <div>
+        <p class="eyebrow">SOURCE OF TRUTH</p>
+        <h2>Agent-ready by cloning the repository.</h2>
+      </div>
+      <p>The canonical skill follows the open <code>SKILL.md</code> format. Codex reads it from <code>.agents/skills</code>; Claude Code receives the same instructions through <code>.claude/skills</code>. No prompt needs to be copied for repository-scoped use.</p>
+    </section>
+
+    <section class="install-grid" aria-label="Installation options">
+      <article class="install-card">
+        <span class="number">01</span>
+        <p class="eyebrow">REPOSITORY SCOPE</p>
+        <h2>Clone and start</h2>
+        <p>Both agents discover the checked-in project skill automatically when launched from the repository.</p>
+        <div class="command-row"><code>git clone https://github.com/BirgerMoell/post-training-eval</code><button class="copy-button" data-copy="git clone https://github.com/BirgerMoell/post-training-eval" type="button">Copy</button></div>
+      </article>
+
+      <article class="install-card">
+        <span class="number">02</span>
+        <p class="eyebrow">PERSONAL SCOPE</p>
+        <h2>Install for both</h2>
+        <p>Create safe symlinks in the personal Codex and Claude Code skill directories. Existing paths are never overwritten.</p>
+        <div class="command-row"><code>python3 scripts/install_skill.py --agent both</code><button class="copy-button" data-copy="python3 scripts/install_skill.py --agent both" type="button">Copy</button></div>
+      </article>
+
+      <article class="install-card">
+        <span class="number">03</span>
+        <p class="eyebrow">ANY AGENT</p>
+        <h2>Point to one file</h2>
+        <p>Use the raw canonical instructions when an agent does not support repository skill discovery.</p>
+        <div class="command-row prompt-row"><code>Read this SKILL.md completely and use it to run a quick evaluation of MODEL.</code><button class="copy-button" data-copy="Read https://raw.githubusercontent.com/BirgerMoell/post-training-eval/main/.agents/skills/post-training-eval/SKILL.md completely and use it to run a quick evaluation of MODEL." type="button">Copy prompt</button></div>
+      </article>
+    </section>
+
+    <section class="panel workflow-panel">
+      <div class="section-heading"><div><p class="eyebrow">WORKFLOW</p><h2>What the skill makes explicit</h2></div><p>Every stage produces inspectable evidence and preserves the boundary between a diagnostic signal and a release claim.</p></div>
+      <ol class="workflow-list">
+        <li><span>01</span><div><h3>Resolve</h3><p>Pin the checkpoint revision and choose smoke, quick, core, or release scope.</p></div></li>
+        <li><span>02</span><div><h3>Preflight</h3><p>Check disk, inodes, RAM, VRAM, caches, running processes, and context feasibility before downloading.</p></div></li>
+        <li><span>03</span><div><h3>Execute</h3><p>Run the official task registry through isolated harness environments with recorded protocols.</p></div></li>
+        <li><span>04</span><div><h3>Resume</h3><p>Use manifests and raw artifacts to continue interrupted batches without duplicating completed work.</p></div></li>
+        <li><span>05</span><div><h3>Normalize</h3><p>Attach model, task, language, prompt, limit, harness, provenance, and limitation metadata.</p></div></li>
+        <li><span>06</span><div><h3>Publish</h3><p>Validate results and update the dashboard only after the evidence is complete and publication is authorized.</p></div></li>
+      </ol>
+    </section>
+
+    <section class="skill-links panel">
+      <div><p class="eyebrow">INSPECT BEFORE USE</p><h2>The instructions are public and versioned.</h2></div>
+      <div class="link-stack">
+        <a href="https://github.com/BirgerMoell/post-training-eval/blob/main/.agents/skills/post-training-eval/SKILL.md">Read canonical skill ↗</a>
+        <a href="https://raw.githubusercontent.com/BirgerMoell/post-training-eval/main/.agents/skills/post-training-eval/SKILL.md">Open raw SKILL.md ↗</a>
+        <a href="https://github.com/BirgerMoell/post-training-eval/tree/main/.agents/skills/post-training-eval/references">Inspect runtime and evidence references ↗</a>
+      </div>
+    </section>
+  </main>
+
+  <footer><p>One canonical skill, versioned with the evaluator it controls.</p></footer>
+  <script src="skill.js" defer></script>
+</body>
+</html>

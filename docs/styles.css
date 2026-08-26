@@ -16,6 +16,7 @@ a { color: inherit; }
 .hero { color: #f8f5eb; background: var(--ink); padding: 28px max(28px, calc((100vw - 1240px)/2)) 72px; }
 nav { display: flex; justify-content: space-between; align-items: center; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
 nav a { text-decoration: none; }
+.nav-links { display: flex; gap: 24px; }
 .wordmark { color: var(--green); font-weight: 800; }
 .hero-grid { display: grid; grid-template-columns: 1.25fr .75fr; gap: 64px; align-items: end; margin-top: 112px; }
 .eyebrow { margin: 0 0 14px; color: var(--teal); font: 700 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .14em; }
@@ -86,6 +87,33 @@ tr:last-child td { border-bottom: 0; }
 footer { max-width: 1240px; margin: 0 auto; padding: 0 28px 50px; color: var(--muted); font-size: 12px; }
 .empty { padding: 32px; color: var(--muted); text-align: center; }
 
+.skill-hero { padding-bottom: 64px; }
+.skill-main { padding-top: 28px; }
+.skill-main .panel:first-child { margin-top: 0; }
+.skill-intro { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: end; }
+.skill-intro h2, .install-card h2, .skill-links h2 { margin: 0; font-size: clamp(28px, 3.6vw, 46px); line-height: 1; letter-spacing: -.045em; }
+.skill-intro > p { margin: 0; color: var(--muted); font-size: 17px; }
+.skill-intro code, .install-card code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.install-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 28px; border: 1px solid var(--line); background: var(--line); }
+.install-card { min-width: 0; padding: 28px; background: var(--white); }
+.install-card .number { float: right; color: var(--orange); font: 700 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.install-card h2 { margin-bottom: 16px; font-size: 30px; }
+.install-card > p:not(.eyebrow) { min-height: 68px; margin: 0 0 22px; color: var(--muted); }
+.command-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; border: 1px solid var(--line); background: #efede4; }
+.command-row code { min-width: 0; padding: 13px; overflow-wrap: anywhere; color: var(--teal); font-size: 11px; }
+.copy-button { border: 0; border-left: 1px solid var(--line); padding: 0 13px; background: var(--ink); color: var(--green); cursor: pointer; font: 700 10px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .06em; text-transform: uppercase; }
+.copy-button:hover { background: var(--teal); }
+.workflow-list { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; padding: 0; border: 1px solid var(--line); list-style: none; }
+.workflow-list li { display: grid; grid-template-columns: auto 1fr; gap: 15px; min-height: 155px; padding: 22px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.workflow-list li:nth-child(3n) { border-right: 0; }
+.workflow-list li:nth-child(n+4) { border-bottom: 0; }
+.workflow-list li > span { color: var(--orange); font: 700 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.workflow-list h3 { margin: 0 0 7px; font-size: 20px; }
+.workflow-list p { margin: 0; color: var(--muted); }
+.skill-links { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: end; }
+.link-stack { display: grid; border-top: 1px solid var(--line); }
+.link-stack a { padding: 12px 0; border-bottom: 1px solid var(--line); color: var(--teal); font-weight: 650; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
 @media (max-width: 850px) {
   .hero-grid { grid-template-columns: 1fr; margin-top: 72px; gap: 36px; }
   .summary { grid-template-columns: repeat(2, 1fr); }
@@ -95,12 +123,21 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 28px 50px; color: var(--m
   .gate-summary { grid-template-columns: 1fr; }
   .capability-grid { grid-template-columns: 1fr; }
   .section-heading { align-items: start; flex-direction: column; }
+  .install-grid { grid-template-columns: 1fr; }
+  .skill-intro, .skill-links { grid-template-columns: 1fr; gap: 28px; }
+  .workflow-list { grid-template-columns: 1fr 1fr; }
+  .workflow-list li, .workflow-list li:nth-child(3n), .workflow-list li:nth-child(n+4) { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .workflow-list li:nth-child(2n) { border-right: 0; }
+  .workflow-list li:nth-child(n+5) { border-bottom: 0; }
 }
 
 @media (max-width: 520px) {
   .hero { padding-bottom: 48px; }
-  nav a:last-child { display: none; }
+  .nav-links a:last-child { display: none; }
   .summary, .filters { grid-template-columns: 1fr; }
   .stat { border-right: 0; border-bottom: 1px solid var(--line); }
   .panel { padding: 20px 16px; }
+  .workflow-list { grid-template-columns: 1fr; }
+  .workflow-list li, .workflow-list li:nth-child(2n), .workflow-list li:nth-child(n+5) { border-right: 0; border-bottom: 1px solid var(--line); }
+  .workflow-list li:last-child { border-bottom: 0; }
 }

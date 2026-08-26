@@ -1,0 +1,4 @@
+interface:
+  display_name: "Post-training Eval"
+  short_description: "Run capability-driven checkpoint evaluations"
+  default_prompt: "Use $post-training-eval to run a reproducible quick evaluation of this model checkpoint."

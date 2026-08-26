@@ -4,6 +4,8 @@ A capability-driven evaluation control plane for Hugging Face and Megatron check
 
 **[Open the live evaluation dashboard →](https://birgermoell.github.io/post-training-eval/)**
 
+**[Install or inspect the AI-agent skill →](https://birgermoell.github.io/post-training-eval/skill.html)**
+
 This repository deliberately separates three kinds of evidence:
 
 - **Fresh reproduced** — created by a runner from a pinned checkpoint revision and retained raw artifacts.
@@ -11,6 +13,22 @@ This repository deliberately separates three kinds of evidence:
 - **Compatibility check** — proves a checkpoint can be resolved and has a coherent config/tokenizer/weight layout; it is not a quality score.
 
 Missing evidence is displayed as missing. It is never converted to zero or averaged into a capability score.
+
+## AI-agent skill
+
+The repository includes one canonical, portable [`post-training-eval` skill](.agents/skills/post-training-eval/SKILL.md). It teaches Codex or Claude Code how to select hardware, run preflight checks, execute and resume the evaluation profiles, preserve provenance, compare checkpoints, and publish completed evidence.
+
+- **Repository use:** Clone the repository. Codex discovers `.agents/skills/post-training-eval`; Claude Code discovers the project wrapper in `.claude/skills/post-training-eval`.
+- **Personal use:** Run `python3 scripts/install_skill.py --agent both`. The default creates non-destructive symlinks in the current personal skill locations. Add `--mode copy` for a standalone copy.
+- **Any capable agent:** Point it to the [canonical raw `SKILL.md`](https://raw.githubusercontent.com/BirgerMoell/post-training-eval/main/.agents/skills/post-training-eval/SKILL.md) and ask it to follow the file completely.
+
+Preview personal installation without changing anything:
+
+```bash
+python3 scripts/install_skill.py --agent both --dry-run
+```
+
+The installer refuses to overwrite an existing skill. Repository-scoped discovery requires no installer.
 
 ## What is covered
 
