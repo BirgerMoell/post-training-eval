@@ -11,8 +11,10 @@
     {"id": "belebele", "name": "Belebele EU", "metric": "accuracy_normalized", "direction": "higher", "runner": "oellm-eval", "group": "belebele-eu-5-shot", "status": "operational"},
     {"id": "flores-200", "name": "FLORES-200 bidirectional EU", "metric": "chrf++", "direction": "higher", "runner": "oellm-eval", "group": "flores-200-eu-to-eng,flores-200-eng-to-eu", "status": "operational"},
     {"id": "include", "name": "INCLUDE", "metric": "accuracy", "direction": "higher", "target": 74, "stretch": 82, "runner": "oellm-eval", "group": "include", "status": "operational"},
-    {"id": "eu-language-fidelity", "name": "EU language fidelity", "metric": "correct_language_rate", "direction": "higher", "target": 98, "runner": "openai-endpoint", "status": "operational"}
+    {"id": "eu-language-fidelity", "name": "EU language fidelity", "metric": "correct_language_rate", "direction": "higher", "target": 98, "runner": "openai-endpoint", "status": "operational"},
+    {"id": "xwinograd", "name": "XWinograd", "metric": "accuracy", "direction": "higher", "runner": "oellm-eval", "group": "generic-multilingual", "status": "operational"},
+    {"id": "xcopa", "name": "XCOPA", "metric": "accuracy", "direction": "higher", "runner": "oellm-eval", "group": "generic-multilingual", "status": "operational"},
+    {"id": "xstorycloze", "name": "XStoryCloze", "metric": "accuracy", "direction": "higher", "runner": "oellm-eval", "group": "generic-multilingual", "status": "operational"}
   ],
   "required_aggregations": ["macro", "p10", "minimum", "tier-1", "tier-2", "tier-3", "max-tier-gap"]
 }
-

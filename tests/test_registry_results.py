@@ -36,6 +36,15 @@ class RegistryResultTests(unittest.TestCase):
         self.assertEqual(run["metrics"][0]["value"], 75.0)
         self.assertEqual(run["metrics"][0]["capability"], "instruction-chat")
 
+    def test_multilingual_task_mapping_preserves_language(self):
+        raw = {"results": {"sib200_swe_Latn": {"acc_norm,none": 0.8}}, "n-samples": {}}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "result.json"
+            path.write_text(json.dumps(raw))
+            run = ingest_lm_eval(path, "owner/model", "sib-run", "abc", "lm_eval ...")
+        self.assertEqual(run["metrics"][0]["benchmark"], "sib-200")
+        self.assertEqual(run["metrics"][0]["language"], "swe_Latn")
+
     def test_site_has_models(self):
         data = build_site_data()
         self.assertGreaterEqual(len(data["models"]), 2)

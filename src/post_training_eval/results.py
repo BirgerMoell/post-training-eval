@@ -35,17 +35,23 @@ def validate_result(run: dict[str, Any]) -> list[str]:
     if not isinstance(run.get("metrics"), list):
         errors.append("metrics must be a list")
         return errors
+    registry = benchmark_index()
     for index, metric in enumerate(run["metrics"]):
         for key in ("capability", "benchmark", "metric", "value", "scale"):
             if key not in metric:
                 errors.append(f"metrics[{index}] missing {key}")
         if metric.get("scale") == "percentage" and isinstance(metric.get("value"), (int, float)) and not 0 <= metric["value"] <= 100:
             errors.append(f"metrics[{index}] percentage outside 0..100")
+        benchmark = registry.get(metric.get("benchmark"))
+        if benchmark is None:
+            errors.append(f"metrics[{index}] unknown benchmark {metric.get('benchmark')}")
+        elif benchmark.get("capability") != metric.get("capability"):
+            errors.append(f"metrics[{index}] benchmark {metric.get('benchmark')} belongs to {benchmark.get('capability')}, not {metric.get('capability')}")
     return errors
 
 
 def _task_to_benchmark(task: str) -> str:
-    if task.startswith("mgsm_native_cot_"):
+    if task.startswith(("mgsm_native_cot_", "global_mgsm_")):
         return "mgsm"
     if task.startswith("global_mmlu"):
         return "global-mmlu"
@@ -57,8 +63,30 @@ def _task_to_benchmark(task: str) -> str:
         return "sib-200"
     if task.startswith("belebele"):
         return "belebele"
-    mapping = {"ifeval": "ifeval", "gsm8k": "gsm8k", "arc_challenge": "arc-challenge", "mbpp": "mbpp", "humaneval": "humaneval", "HumanEval": "humaneval", "LiveCodeBench": "livecodebench"}
+    if task.startswith("flores200:"):
+        return "flores-200"
+    if task.startswith("include_base"):
+        return "include"
+    mapping = {"ifeval": "ifeval", "gsm8k": "gsm8k", "arc_challenge": "arc-challenge", "mbpp": "mbpp", "humaneval": "humaneval", "HumanEval": "humaneval", "LiveCodeBench": "livecodebench", "mmlu_college_computer_science": "mmlu-college-cs", "hendrycks_math500": "math-500", "MATH500": "math-500", "GPQADiamond": "gpqa-diamond", "AIME24": "aime24", "AIME25": "aime25", "AMC23": "amc23", "xwinograd": "xwinograd", "xcopa": "xcopa", "xstorycloze": "xstorycloze"}
     return mapping.get(task, task.replace("_", "-"))
+
+
+def _task_language(task: str, benchmark_id: str) -> str | None:
+    prefixes = {
+        "mgsm": ("mgsm_native_cot_", "global_mgsm_"),
+        "global-mmlu": ("global_mmlu_full_",),
+        "mmlu-prox": ("mmlu_prox_",),
+        "sib-200": ("sib200_",),
+        "belebele": ("belebele_",),
+    }
+    for prefix in prefixes.get(benchmark_id, ()):
+        if task.startswith(prefix):
+            return task[len(prefix) :].removesuffix("_cf")
+    if benchmark_id == "polymath" and task.startswith("polymath_"):
+        return task.split("_")[1]
+    if benchmark_id == "flores-200":
+        return task.split(":", 1)[-1]
+    return None
 
 
 def ingest_lm_eval(input_path: Path, model_id: str, run_id: str, model_revision: str | None, source_command: str | None) -> dict[str, Any]:
@@ -73,7 +101,7 @@ def ingest_lm_eval(input_path: Path, model_id: str, run_id: str, model_revision:
         for metric_name in PREFERRED_METRICS:
             value = values.get(metric_name)
             if isinstance(value, (int, float)):
-                language = task.rsplit("_", 1)[-1] if benchmark_id in {"mgsm", "global-mmlu", "mmlu-prox", "sib-200", "belebele", "polymath"} else None
+                language = _task_language(task, benchmark_id)
                 metrics.append({
                     "capability": benchmark.get("capability", "unmapped"),
                     "benchmark": benchmark_id,

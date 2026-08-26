@@ -365,6 +365,33 @@
           "target": 98,
           "runner": "openai-endpoint",
           "status": "operational"
+        },
+        {
+          "id": "xwinograd",
+          "name": "XWinograd",
+          "metric": "accuracy",
+          "direction": "higher",
+          "runner": "oellm-eval",
+          "group": "generic-multilingual",
+          "status": "operational"
+        },
+        {
+          "id": "xcopa",
+          "name": "XCOPA",
+          "metric": "accuracy",
+          "direction": "higher",
+          "runner": "oellm-eval",
+          "group": "generic-multilingual",
+          "status": "operational"
+        },
+        {
+          "id": "xstorycloze",
+          "name": "XStoryCloze",
+          "metric": "accuracy",
+          "direction": "higher",
+          "runner": "oellm-eval",
+          "group": "generic-multilingual",
+          "status": "operational"
         }
       ],
       "required_aggregations": [
@@ -458,6 +485,33 @@
           "runner": "openai-endpoint",
           "status": "operational",
           "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+        },
+        {
+          "id": "aime24",
+          "name": "AIME 2024",
+          "metric": "accuracy",
+          "direction": "higher",
+          "runner": "oellm-eval",
+          "group": "reasoning",
+          "status": "operational"
+        },
+        {
+          "id": "aime25",
+          "name": "AIME 2025",
+          "metric": "accuracy",
+          "direction": "higher",
+          "runner": "oellm-eval",
+          "group": "reasoning",
+          "status": "operational"
+        },
+        {
+          "id": "amc23",
+          "name": "AMC 2023",
+          "metric": "accuracy",
+          "direction": "higher",
+          "runner": "oellm-eval",
+          "group": "reasoning",
+          "status": "operational"
         }
       ]
     },
