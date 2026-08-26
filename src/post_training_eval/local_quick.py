@@ -31,7 +31,6 @@ EVALCHEMY_MAX_TOKENS = {
     "GPQADiamond": 1024,
     "HumanEval": 1024,
 }
-EVALCHEMY_ISOLATED_TASKS = {"GPQADiamond"}
 
 
 def evalchemy_max_tokens(task: TaskSpec) -> int | None:
@@ -41,7 +40,7 @@ def evalchemy_max_tokens(task: TaskSpec) -> int | None:
 
 
 def _batch_partition(task: TaskSpec) -> str:
-    if task.suite == "evalchemy" and task.task in EVALCHEMY_ISOLATED_TASKS:
+    if task.suite == "evalchemy":
         return task.task
     return ""
 
@@ -57,7 +56,7 @@ def _chunks(values: Sequence[TaskSpec], size: int) -> list[list[TaskSpec]]:
 
 
 def batch_tasks(tasks: Iterable[TaskSpec], max_tasks_per_invocation: int = 32) -> list[list[TaskSpec]]:
-    """Group only tasks with the same harness, few-shot protocol, and generation cap."""
+    """Group compatible tasks, while isolating Evalchemy for atomic per-task saves."""
     groups: dict[tuple[str, int, int | None, str], list[TaskSpec]] = {}
     for task in tasks:
         groups.setdefault(
@@ -178,7 +177,6 @@ def build_evalchemy_command(
         "--max_tokens",
         str(max_tokens.pop()),
         "--apply_chat_template",
-        "--log_samples",
     ]
 
 
@@ -254,6 +252,8 @@ def run_local_quick(
                     if task.suite == "evalchemy"
                 },
                 "human_eval_sampling": "upstream debug subset (two examples per available language)",
+                "intermediate_save_policy": "one Evalchemy task per invocation; manifest updated atomically after each task",
+                "log_samples": False,
             },
         }
 
@@ -310,6 +310,8 @@ def run_local_quick(
                 "question_limit": limit,
                 "repeat_limit": EVALCHEMY_REPEAT_LIMIT,
                 "max_new_tokens": evalchemy_max_tokens(batch[0]),
+                "atomic_result_per_task": True,
+                "log_samples": False,
             }
         _write_json(manifest_path, manifest)
         with (batch_dir / "runner.log").open("a") as log:

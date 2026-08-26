@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import time
 from functools import wraps
 from pathlib import Path
 from typing import Any, Callable
@@ -9,6 +10,9 @@ from typing import Any, Callable
 
 LIMIT_ENV = "PTEVAL_EVALCHEMY_QUESTION_LIMIT"
 REPEAT_LIMIT_ENV = "PTEVAL_EVALCHEMY_REPEAT_LIMIT"
+FILELOCK_FORK_ERROR = "unsafe while filelock is changing descriptor ownership"
+HUMANEVAL_FORK_ATTEMPTS = 6
+HUMANEVAL_FORK_RETRY_SECONDS = 0.5
 
 
 def _bounded_questions(loader: Callable[..., Any], limit: int) -> Callable[..., Any]:
@@ -23,6 +27,58 @@ def _bounded_questions(loader: Callable[..., Any], limit: int) -> Callable[..., 
     return bounded
 
 
+def retry_filelock_fork(
+    call: Callable[..., Any],
+    *args: Any,
+    attempts: int = HUMANEVAL_FORK_ATTEMPTS,
+    delay_seconds: float = HUMANEVAL_FORK_RETRY_SECONDS,
+    on_retry: Callable[[int], None] | None = None,
+    **kwargs: Any,
+) -> Any:
+    """Retry the transient filelock audit-hook race around HumanEval forks."""
+    if attempts < 1:
+        raise ValueError("attempts must be positive")
+    for attempt in range(1, attempts + 1):
+        try:
+            return call(*args, **kwargs)
+        except RuntimeError as exc:
+            if FILELOCK_FORK_ERROR not in str(exc) or attempt == attempts:
+                raise
+            if on_retry:
+                on_retry(attempt)
+            time.sleep(delay_seconds)
+    raise AssertionError("unreachable")
+
+
+def _patch_humaneval_fork_retry(instance: Any) -> bool:
+    if type(instance).__name__ != "HumanEvalBenchmark":
+        return False
+    method = getattr(instance, "evaluate_responses", None)
+    namespace = getattr(getattr(method, "__func__", method), "__globals__", None)
+    if not namespace:
+        return False
+    evaluator = namespace.get("evaluate_functional_correctness")
+    if not callable(evaluator):
+        return False
+
+    logger = getattr(instance, "logger", None)
+
+    @wraps(evaluator)
+    def retrying_evaluator(*args: Any, **kwargs: Any) -> Any:
+        def report_retry(attempt: int) -> None:
+            if logger:
+                logger.warning(
+                    "HumanEval filelock/fork race; retrying functional tests (%s/%s)",
+                    attempt,
+                    HUMANEVAL_FORK_ATTEMPTS - 1,
+                )
+
+        return retry_filelock_fork(evaluator, *args, on_retry=report_retry, **kwargs)
+
+    namespace["evaluate_functional_correctness"] = retrying_evaluator
+    return True
+
+
 def configure_benchmark(instance: Any, question_limit: int, repeat_limit: int) -> dict[str, Any]:
     """Bound an Evalchemy chat benchmark without changing the upstream checkout."""
     if question_limit < 1 or repeat_limit < 1:
@@ -32,6 +88,7 @@ def configure_benchmark(instance: Any, question_limit: int, repeat_limit: int) -
         "question_limit": question_limit,
         "repeat_limit": None,
         "sampling": None,
+        "human_eval_fork_retry": False,
     }
     loader = getattr(instance, "load_questions", None)
     if callable(loader):
@@ -51,6 +108,8 @@ def configure_benchmark(instance: Any, question_limit: int, repeat_limit: int) -
     if hasattr(instance, "n_repeat"):
         instance.n_repeat = min(int(instance.n_repeat), repeat_limit)
         policy["repeat_limit"] = instance.n_repeat
+
+    policy["human_eval_fork_retry"] = _patch_humaneval_fork_retry(instance)
 
     logger = getattr(instance, "logger", None)
     if logger:

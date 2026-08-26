@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from post_training_eval.evalchemy_quick_adapter import configure_benchmark
+from post_training_eval.evalchemy_quick_adapter import configure_benchmark, retry_filelock_fork
 from post_training_eval.local_quick import TaskSpec, batch_tasks, build_evalchemy_command, build_lm_eval_command
 
 
@@ -17,7 +17,7 @@ class LocalQuickTests(unittest.TestCase):
         self.assertEqual([[task.task for task in batch] for batch in batches], [["a", "b"], ["c"], ["d"]])
         self.assertTrue(all(len({(task.suite, task.n_shot) for task in batch}) == 1 for batch in batches))
 
-    def test_evalchemy_batches_never_mix_generation_caps(self):
+    def test_evalchemy_batches_are_atomic_per_task(self):
         tasks = [
             TaskSpec("AIME24", 0, "evalchemy"),
             TaskSpec("MATH500", 0, "evalchemy"),
@@ -27,7 +27,7 @@ class LocalQuickTests(unittest.TestCase):
         batches = batch_tasks(tasks)
         self.assertEqual(
             [[task.task for task in batch] for batch in batches],
-            [["HumanEval"], ["GPQADiamond"], ["AIME24", "MATH500"]],
+            [["GPQADiamond"], ["HumanEval"], ["AIME24"], ["MATH500"]],
         )
 
     def test_lm_eval_command_is_bounded_deterministic_and_chat_templated(self):
@@ -54,7 +54,7 @@ class LocalQuickTests(unittest.TestCase):
             "/tokenizers/checkpoint",
         )
         self.assertIn("--apply_chat_template", command)
-        self.assertIn("--log_samples", command)
+        self.assertNotIn("--log_samples", command)
         self.assertNotIn("-m", command)
         self.assertTrue(any(value.endswith("evalchemy_quick_adapter.py") for value in command))
         self.assertEqual(command[command.index("--max_tokens") + 1], "2048")
@@ -83,6 +83,29 @@ class LocalQuickTests(unittest.TestCase):
         policy = configure_benchmark(benchmark, question_limit=8, repeat_limit=1)
         self.assertTrue(benchmark.debug)
         self.assertEqual(policy["sampling"], "upstream debug subset")
+
+    def test_filelock_fork_race_is_retried(self):
+        calls = []
+
+        def flaky():
+            calls.append(True)
+            if len(calls) < 3:
+                raise RuntimeError("os.fork is unsafe while filelock is changing descriptor ownership")
+            return "saved"
+
+        self.assertEqual(retry_filelock_fork(flaky, attempts=3, delay_seconds=0), "saved")
+        self.assertEqual(len(calls), 3)
+
+    def test_unrelated_runtime_error_is_not_retried(self):
+        calls = []
+
+        def broken():
+            calls.append(True)
+            raise RuntimeError("different failure")
+
+        with self.assertRaisesRegex(RuntimeError, "different failure"):
+            retry_filelock_fork(broken, attempts=3, delay_seconds=0)
+        self.assertEqual(len(calls), 1)
 
 
 if __name__ == "__main__":
