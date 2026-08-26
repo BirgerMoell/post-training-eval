@@ -57,7 +57,12 @@ function renderCoverage() {
 function renderCapabilities() {
   document.querySelector("#capabilities").innerHTML = state.data.capabilities.map((cap, index) => {
     const operational = cap.benchmarks.filter(item => item.status === "operational").length;
-    return `<article class="capability-card"><span class="number">${String(index + 1).padStart(2, "0")}</span><h3>${escapeHtml(cap.name)}</h3><p>${escapeHtml(cap.question)}</p><div class="counts"><span>${cap.benchmarks.length} benchmarks</span><span>${operational} operational</span></div></article>`;
+    const benchmarks = cap.benchmarks.map(item => {
+      const target = item.target === undefined ? "" : ` · target ${item.direction === "lower" ? "≤" : "≥"}${item.target}`;
+      const name = item.url ? `<a href="${escapeHtml(item.url)}">${escapeHtml(item.name)} ↗</a>` : escapeHtml(item.name);
+      return `<li><span>${name}<small>${escapeHtml(item.metric)}${escapeHtml(target)}</small></span><span class="status ${escapeHtml(item.status)}">${escapeHtml(label(item.status))}</span></li>`;
+    }).join("");
+    return `<article class="capability-card"><span class="number">${String(index + 1).padStart(2, "0")}</span><h3>${escapeHtml(cap.name)}</h3><p>${escapeHtml(cap.question)}</p><div class="counts"><span>${cap.benchmarks.length} benchmarks</span><span>${operational} operational</span></div><details><summary>View evaluation plan</summary><ul>${benchmarks}</ul></details></article>`;
   }).join("");
 }
 

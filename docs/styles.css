@@ -72,6 +72,16 @@ tr:last-child td { border-bottom: 0; }
 .capability-card h3 { margin: 22px 0 9px; font-size: 22px; letter-spacing: -.025em; }
 .capability-card p { margin: 0; color: var(--muted); }
 .capability-card .counts { margin-top: 22px; display: flex; gap: 12px; color: var(--ink); font-size: 12px; }
+.capability-card details { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 14px; }
+.capability-card summary { cursor: pointer; color: var(--teal); font: 700 11px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .06em; text-transform: uppercase; }
+.capability-card ul { margin: 14px 0 0; padding: 0; list-style: none; }
+.capability-card li { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid #ecece5; font-size: 12px; }
+.capability-card li:first-child { border-top: 0; }
+.capability-card li small { display: block; color: var(--muted); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.capability-card li a { text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.status { height: max-content; flex: 0 0 auto; padding: 3px 5px; background: #eceee6; color: var(--muted); font: 700 8px ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; }
+.status.operational { background: #ddf2e9; color: #174d41; }
+.status.license-gated, .status.submission-required { background: #ffe2d8; color: #7f2c10; }
 footer { max-width: 1240px; margin: 0 auto; padding: 0 28px 50px; color: var(--muted); font-size: 12px; }
 .empty { padding: 32px; color: var(--muted); text-align: center; }
 
