@@ -26,7 +26,19 @@ class CheckpointTests(unittest.TestCase):
         with self.assertRaises(CheckpointError):
             parse_checkpoint("not-a-checkpoint")
 
+    def test_megatron_distcp_inspection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "latest_checkpointed_iteration.txt").write_text("42\n")
+            iteration = root / "iter_0000042"
+            iteration.mkdir()
+            (iteration / "__0_0.distcp").write_bytes(b"checkpoint")
+            (iteration / ".metadata").write_bytes(b"metadata")
+            report = inspect_checkpoint(parse_checkpoint(f"megatron://{root}"))
+            self.assertEqual(report["status"], "conversion_required")
+            self.assertEqual(report["iteration"], 42)
+            self.assertTrue(report["checks"]["distributed_metadata"])
+
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -60,7 +60,7 @@ def parse_checkpoint(value: str) -> CheckpointRef:
 def _looks_like_megatron(path: Path) -> bool:
     if (path / "latest_checkpointed_iteration.txt").exists():
         return True
-    return any(path.glob("iter_*/mp_rank_*")) or any(path.glob("mp_rank_*"))
+    return any(path.glob("iter_*")) or any(path.glob("mp_rank_*")) or any(path.glob("*.distcp"))
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -164,17 +164,23 @@ def inspect_checkpoint(ref: CheckpointRef) -> dict[str, Any]:
         iteration = tracker.read_text().strip() if tracker.exists() else None
         iteration_dir = path / f"iter_{int(iteration):07d}" if iteration and iteration.isdigit() else path
         rank_dirs = sorted(str(item.relative_to(path)) for item in iteration_dir.glob("mp_rank_*"))
-        tensor_files = sorted(str(item.relative_to(path)) for item in iteration_dir.glob("mp_rank_*/*.pt"))
+        tensor_paths = []
+        for pattern in ("**/*.pt", "**/*.distcp", "**/*.safetensors"):
+            tensor_paths.extend(iteration_dir.glob(pattern))
+        tensor_files = sorted({str(item.relative_to(path)) for item in tensor_paths if item.is_file()})
+        metadata_files = sorted(str(item.relative_to(path)) for name in ("metadata.json", ".metadata", "common.pt") for item in iteration_dir.glob(name))
+        layout_present = bool(rank_dirs or tensor_files or metadata_files)
         return {
             "schema_version": 1,
-            "status": "conversion_required" if rank_dirs and tensor_files else "incomplete",
+            "status": "conversion_required" if layout_present and tensor_files else "incomplete",
             "format": "megatron",
             "model_id": path.name,
             "path": str(path),
             "iteration": int(iteration) if iteration and iteration.isdigit() else iteration,
             "rank_directories": rank_dirs,
             "tensor_files": tensor_files,
-            "checks": {"tracker": tracker.exists(), "rank_directories": bool(rank_dirs), "tensor_files": bool(tensor_files)},
+            "metadata_files": metadata_files,
+            "checks": {"tracker": tracker.exists(), "rank_directories": bool(rank_dirs), "tensor_files": bool(tensor_files), "distributed_metadata": bool(metadata_files)},
         }
     if ref.format == "openai_endpoint":
         endpoint, sep, model = ref.location.partition("#")
