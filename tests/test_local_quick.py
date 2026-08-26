@@ -27,7 +27,7 @@ class LocalQuickTests(unittest.TestCase):
         batches = batch_tasks(tasks)
         self.assertEqual(
             [[task.task for task in batch] for batch in batches],
-            [["GPQADiamond", "HumanEval"], ["AIME24", "MATH500"]],
+            [["HumanEval"], ["GPQADiamond"], ["AIME24", "MATH500"]],
         )
 
     def test_lm_eval_command_is_bounded_deterministic_and_chat_templated(self):

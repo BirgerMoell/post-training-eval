@@ -31,12 +31,19 @@ EVALCHEMY_MAX_TOKENS = {
     "GPQADiamond": 1024,
     "HumanEval": 1024,
 }
+EVALCHEMY_ISOLATED_TASKS = {"GPQADiamond"}
 
 
 def evalchemy_max_tokens(task: TaskSpec) -> int | None:
     if task.suite != "evalchemy":
         return None
     return EVALCHEMY_MAX_TOKENS.get(task.task, EVALCHEMY_DEFAULT_MAX_TOKENS)
+
+
+def _batch_partition(task: TaskSpec) -> str:
+    if task.suite == "evalchemy" and task.task in EVALCHEMY_ISOLATED_TASKS:
+        return task.task
+    return ""
 
 
 def _now() -> str:
@@ -51,12 +58,14 @@ def _chunks(values: Sequence[TaskSpec], size: int) -> list[list[TaskSpec]]:
 
 def batch_tasks(tasks: Iterable[TaskSpec], max_tasks_per_invocation: int = 32) -> list[list[TaskSpec]]:
     """Group only tasks with the same harness, few-shot protocol, and generation cap."""
-    groups: dict[tuple[str, int, int | None], list[TaskSpec]] = {}
+    groups: dict[tuple[str, int, int | None, str], list[TaskSpec]] = {}
     for task in tasks:
-        groups.setdefault((task.suite, task.n_shot, evalchemy_max_tokens(task)), []).append(task)
+        groups.setdefault(
+            (task.suite, task.n_shot, evalchemy_max_tokens(task), _batch_partition(task)), []
+        ).append(task)
     batches: list[list[TaskSpec]] = []
     suite_order = {"lm-eval-harness": 0, "lighteval": 1, "evalchemy": 2}
-    for key in sorted(groups, key=lambda item: (suite_order.get(item[0], 99), item[1], item[2] or 0)):
+    for key in sorted(groups, key=lambda item: (suite_order.get(item[0], 99), item[1], item[2] or 0, item[3])):
         batches.extend(_chunks(sorted(groups[key], key=lambda item: item.task), max_tasks_per_invocation))
     return batches
 
@@ -311,10 +320,10 @@ def run_local_quick(
             "finished_at": _now(),
         })
         _write_json(manifest_path, manifest)
-        if completed.returncode:
-            raise LocalQuickError(f"{batch_id} failed; see {batch_dir / 'runner.log'}")
-
-    manifest["status"] = "completed"
+    failed_batches = [batch_id for batch_id, batch in manifest["batches"].items() if batch["status"] == "failed"]
+    manifest["status"] = "completed_with_failures" if failed_batches else "completed"
+    if failed_batches:
+        manifest["failed_batches"] = failed_batches
     manifest["finished_at"] = _now()
     _write_json(manifest_path, manifest)
     return manifest_path
