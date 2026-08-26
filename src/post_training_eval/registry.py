@@ -62,7 +62,12 @@ def validate_registry(root: Path | None = None) -> list[str]:
     if missing:
         errors.append(f"Missing capabilities: {', '.join(missing)}")
     try:
-        benchmark_index(base)
+        benchmarks = benchmark_index(base)
+        for benchmark_id, benchmark in benchmarks.items():
+            if not isinstance(benchmark.get("target"), (int, float)):
+                errors.append(f"{benchmark_id}: missing numeric target")
+            if benchmark.get("direction") not in {"higher", "lower"}:
+                errors.append(f"{benchmark_id}: direction must be higher or lower")
     except RegistryError as exc:
         errors.append(str(exc))
     for profile_path in sorted((base / "profiles").glob("*.json")):

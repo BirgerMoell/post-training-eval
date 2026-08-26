@@ -43,6 +43,7 @@ def _canonical_metric_name(value: str) -> str:
         "exact_match,strict-match": "exact_match_strict",
         "exact_match,flexible-extract": "exact_match_flexible",
         "flexible_exact_match": "exact_match_flexible",
+        "pass@1": "pass_at_1",
     }
     normalized = value.removesuffix(",none")
     return aliases.get(value, aliases.get(normalized, normalized))
@@ -97,9 +98,7 @@ def _build_model_scorecard(
             continue
         timestamp = run.get("finished_at") or run.get("started_at") or ""
         for metric in run.get("metrics", []):
-            if metric.get("scale") != "percentage" or not isinstance(metric.get("value"), (int, float)):
-                continue
-            if not 0 <= float(metric["value"]) <= 100:
+            if not isinstance(metric.get("value"), (int, float)):
                 continue
             key = (
                 metric.get("capability"),
@@ -108,16 +107,18 @@ def _build_model_scorecard(
                 metric.get("language"),
                 metric.get("slice"),
             )
-            if evidence_rank > 0:
-                candidate = (evidence_rank, timestamp, run, metric)
-                current = selected.get(key)
-                if current is None or candidate[:2] > current[:2]:
-                    selected[key] = candidate
             if target_rank > 0:
                 target_candidate = (target_rank, timestamp, run, metric)
                 current_target = target_selected.get(key)
                 if current_target is None or target_candidate[:2] > current_target[:2]:
                     target_selected[key] = target_candidate
+            if metric.get("scale") != "percentage" or not 0 <= float(metric["value"]) <= 100:
+                continue
+            if evidence_rank > 0:
+                candidate = (evidence_rank, timestamp, run, metric)
+                current = selected.get(key)
+                if current is None or candidate[:2] > current[:2]:
+                    selected[key] = candidate
 
     grouped: dict[str, dict[str, list[tuple[float, dict[str, Any], dict[str, Any]]]]] = {}
     best_quality_rank: dict[tuple[str, str], int] = {}
@@ -169,13 +170,18 @@ def _build_model_scorecard(
                 if _canonical_metric_name(str(item[1].get("metric", ""))) == target_metric
             ]
             target_value = None
+            target_gap = None
+            target_scale = None
             target_status = "not-set" if target is None else "not-measured"
             if target is not None and target_measurements:
                 target_value = sum(float(item[1]["value"]) for item in target_measurements) / len(target_measurements)
+                target_scale = target_measurements[0][1].get("scale")
                 if benchmark_definition.get("direction") == "lower":
                     target_status = "met" if target_value <= float(target) else "missed"
+                    target_gap = float(target) - target_value
                 else:
                     target_status = "met" if target_value >= float(target) else "missed"
+                    target_gap = target_value - float(target)
             evidence_runs = sorted({item[1]["run_id"] for item in measurements} | {item[0]["run_id"] for item in target_measurements})
             kinds = sorted({item[1]["provenance"]["kind"] for item in measurements} | {item[0]["provenance"]["kind"] for item in target_measurements})
             diagnostic_flags = [item[1].get("diagnostic", False) for item in measurements] + [item[0].get("diagnostic", False) for item in target_measurements]
@@ -191,6 +197,8 @@ def _build_model_scorecard(
                 "target_metric": benchmark_definition.get("metric"),
                 "target_direction": benchmark_definition.get("direction", "higher"),
                 "target_value": round(target_value, 1) if target_value is not None else None,
+                "target_gap": round(target_gap, 1) if target_gap is not None else None,
+                "target_scale": target_scale,
                 "target_status": target_status,
             })
         capability_score = None
@@ -547,6 +555,12 @@ def build_site_data(root: Path | None = None) -> dict[str, Any]:
             "range": "0–100",
             "description": "Percentage quality metrics only. Lower-is-better percentages are inverted. Measurements are averaged by benchmark, then capability, then equally across capabilities with evidence.",
             "exclusions": ["Missing capabilities", "Compatibility checks", "Ranks", "Latency", "Throughput", "Unscaled benchmark scores"],
+        },
+        "target_policy": {
+            "id": "program-floor-v1",
+            "name": "OpenEuroLLM post-training program floors",
+            "description": "Every registered evaluation has a direction-aware minimum release target for a competitive 9B–30B checkpoint. Targets are planning floors, not claims of state of the art, and must be interpreted under the pinned benchmark protocol.",
+            "gap_definition": "Positive means the model is beyond the target; negative means it is short of the target. Missing evidence has no gap and never passes.",
         },
         "capabilities": capabilities,
         "models": sorted(serial_models, key=lambda item: item["id"]),

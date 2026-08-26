@@ -14,7 +14,8 @@ function canonicalMetric(value) {
     "acc": "accuracy",
     "exact_match,strict-match": "exact_match_strict",
     "exact_match,flexible-extract": "exact_match_flexible",
-    "flexible_exact_match": "exact_match_flexible"
+    "flexible_exact_match": "exact_match_flexible",
+    "pass@1": "pass_at_1"
   };
   const raw = String(value || "");
   const normalized = raw.endsWith(",none") ? raw.slice(0, -5) : raw;
@@ -58,6 +59,45 @@ function targetBadge(status) {
 function targetThreshold(benchmark) {
   if (benchmark?.target == null) return "No numeric target";
   return `${benchmark.direction === "lower" ? "≤" : "≥"} ${benchmark.target}`;
+}
+
+function targetUnit(scale, benchmark) {
+  if (scale === "rank" || benchmark?.metric === "rank") return "places";
+  if (scale === "milliseconds" || benchmark?.metric === "milliseconds") return "ms";
+  if (benchmark?.metric === "output_tokens_per_second") return "tok/s";
+  if (["bleu", "chrf++", "aggregate_score", "primary_task_metric"].includes(benchmark?.metric)) return "pts";
+  return "pp";
+}
+
+function targetValueText(value, scale, benchmark) {
+  if (value == null) return "—";
+  const numeric = Number(value);
+  const rendered = numeric.toLocaleString(undefined, { maximumFractionDigits: 1 });
+  if (scale === "rank" || benchmark?.metric === "rank") return `#${rendered}`;
+  if (scale === "milliseconds" || benchmark?.metric === "milliseconds") return `${rendered} ms`;
+  if (benchmark?.metric === "output_tokens_per_second") return `${rendered} tok/s`;
+  if (["bleu", "chrf++", "aggregate_score", "primary_task_metric"].includes(benchmark?.metric)) return rendered;
+  return `${rendered}%`;
+}
+
+function targetGap(value, benchmark) {
+  if (benchmark?.target == null || !Number.isFinite(Number(value))) return null;
+  return benchmark.direction === "lower" ? Number(benchmark.target) - Number(value) : Number(value) - Number(benchmark.target);
+}
+
+function targetGapText(gap, direction, scale, benchmark) {
+  if (gap == null) return "";
+  const absolute = Math.abs(Number(gap)).toLocaleString(undefined, { maximumFractionDigits: 1 });
+  const unit = targetUnit(scale, benchmark);
+  if (Number(gap) === 0) return "At target";
+  if (direction === "lower") return gap > 0 ? `${absolute} ${unit} inside limit` : `${absolute} ${unit} over limit`;
+  return gap > 0 ? `+${absolute} ${unit} above target` : `−${absolute} ${unit} below target`;
+}
+
+function targetGapBadge(gap, direction, scale, benchmark) {
+  if (gap == null) return "";
+  const status = gap >= 0 ? "met" : "missed";
+  return `<span class="target-gap ${status}">${escapeHtml(targetGapText(gap, direction, scale, benchmark))}</span>`;
 }
 
 function metricTargetStatus(metric, benchmark) {
@@ -111,10 +151,12 @@ function renderGate() {
 function benchmarkCell(model, capabilityId, benchmark) {
   const capability = modelCapability(model, capabilityId);
   const evidence = capability?.benchmarks.find(item => item.id === benchmark.id);
-  const score = evidence?.score == null ? "—" : evidence.score.toFixed(1);
+  const score = evidence?.target_value != null
+    ? targetValueText(evidence.target_value, evidence.target_scale, benchmark)
+    : (evidence?.score == null ? "—" : evidence.score.toFixed(1));
   const status = evidence?.target_status || (benchmark.target == null ? "not-set" : "not-measured");
-  const value = evidence?.target_value == null ? "" : `<small>measured ${escapeHtml(evidence.target_value)}</small>`;
-  return `<div class="benchmark-model-cell"><strong>${score}</strong>${targetBadge(status)}${value}</div>`;
+  const gap = targetGapBadge(evidence?.target_gap, benchmark.direction, evidence?.target_scale, benchmark);
+  return `<div class="benchmark-model-cell"><strong>${escapeHtml(score)}</strong>${targetBadge(status)}${gap}</div>`;
 }
 
 function renderCapabilityComparison() {
@@ -188,8 +230,9 @@ function renderResults() {
     const benchmark = lookupBenchmark(metric.capability, metric.benchmark);
     const status = metricTargetStatus(metric, benchmark);
     const target = status === "not-set" ? "—" : targetThreshold(benchmark);
+    const gap = status === "not-set" ? null : targetGap(metric.value, benchmark);
     const slice = [metric.language ? `lang: ${metric.language}` : "", metric.slice, metric.n ? `n=${metric.n}` : ""].filter(Boolean).join(" · ") || "—";
-    return `<tr><td><span class="model-name">${escapeHtml(shortModel(run.model.id))}</span><span class="model-revision">${escapeHtml(shortSha(run.model.revision))}</span></td><td><span class="cap-label">${escapeHtml(label(metric.capability))}</span><span class="benchmark">${escapeHtml(benchmark?.name || label(metric.benchmark))}</span><span class="metric">${escapeHtml(metric.metric)}</span></td><td>${escapeHtml(slice)}</td><td><span class="score">${escapeHtml(scoreText(metric))}</span></td><td>${targetBadge(status)}<small class="target-threshold">${escapeHtml(target)}</small></td><td>${evidenceCell(run)}</td></tr>`;
+    return `<tr><td><span class="model-name">${escapeHtml(shortModel(run.model.id))}</span><span class="model-revision">${escapeHtml(shortSha(run.model.revision))}</span></td><td><span class="cap-label">${escapeHtml(label(metric.capability))}</span><span class="benchmark">${escapeHtml(benchmark?.name || label(metric.benchmark))}</span><span class="metric">${escapeHtml(metric.metric)}</span></td><td>${escapeHtml(slice)}</td><td><span class="score">${escapeHtml(scoreText(metric))}</span></td><td>${targetBadge(status)}<small class="target-threshold">${escapeHtml(target)}</small>${targetGapBadge(gap, benchmark?.direction, metric.scale, benchmark)}</td><td>${evidenceCell(run)}</td></tr>`;
   }).join("") : `<tr><td class="empty" colspan="6">No evidence matches these filters.</td></tr>`;
 }
 
@@ -199,6 +242,7 @@ async function init() {
   state.data = await response.json();
   renderScorecards(); renderGate(); renderCapabilityComparison(); renderCapabilities(); populateFilters(); renderResults();
   document.querySelector("#score-method").innerHTML = `<strong>${escapeHtml(state.data.score_method.name)}:</strong> ${escapeHtml(state.data.score_method.description)} <span>Excluded: ${escapeHtml(state.data.score_method.exclusions.join(", "))}.</span>`;
+  document.querySelector("#target-method").innerHTML = `<strong>${escapeHtml(state.data.target_policy.name)}:</strong> ${escapeHtml(state.data.target_policy.description)} <span>${escapeHtml(state.data.target_policy.gap_definition)}</span>`;
   document.querySelector("#generated").textContent = `Last built ${new Date(state.data.generated_at).toLocaleString()}.`;
 }
 

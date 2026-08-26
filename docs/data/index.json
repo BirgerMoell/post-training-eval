@@ -14,6 +14,12 @@
       "Unscaled benchmark scores"
     ]
   },
+  "target_policy": {
+    "id": "program-floor-v1",
+    "name": "OpenEuroLLM post-training program floors",
+    "description": "Every registered evaluation has a direction-aware minimum release target for a competitive 9B–30B checkpoint. Targets are planning floors, not claims of state of the art, and must be interpreted under the pinned benchmark protocol.",
+    "gap_definition": "Positive means the model is beyond the target; negative means it is short of the target. Missing evidence has no gap and never passes."
+  },
   "capabilities": [
     {
       "schema_version": 1,
@@ -21,6 +27,7 @@
       "name": "Coding",
       "question": "Can the model write correct code and repair defects without losing general capabilities?",
       "gate_policy": "execution_based_and_contamination_aware",
+      "target_policy": "program-floor-v1",
       "benchmarks": [
         {
           "id": "livecodebench",
@@ -38,6 +45,8 @@
           "name": "HumanEval",
           "metric": "pass_at_1",
           "direction": "higher",
+          "target": 70,
+          "stretch": 85,
           "runner": "oellm-eval",
           "group": "reasoning",
           "status": "operational"
@@ -47,6 +56,8 @@
           "name": "MBPP",
           "metric": "pass_at_1",
           "direction": "higher",
+          "target": 65,
+          "stretch": 80,
           "runner": "oellm-eval",
           "group": "reasoning",
           "status": "operational"
@@ -56,6 +67,8 @@
           "name": "OpenEuroLLM defect repair",
           "metric": "tests_passed_rate",
           "direction": "higher",
+          "target": 70,
+          "stretch": 85,
           "runner": "openai-endpoint",
           "status": "operational"
         }
@@ -67,6 +80,7 @@
       "name": "Efficiency & Release",
       "question": "Is the release complete, reproducible, fast enough, and robust after quantization?",
       "gate_policy": "all_artifacts_and_quantization_retention_required",
+      "target_policy": "program-floor-v1",
       "benchmarks": [
         {
           "id": "checkpoint-compatibility",
@@ -83,6 +97,8 @@
           "name": "Serving throughput",
           "metric": "output_tokens_per_second",
           "direction": "higher",
+          "target": 15,
+          "stretch": 30,
           "runner": "external",
           "status": "adapter-required"
         },
@@ -91,6 +107,8 @@
           "name": "Time to first token",
           "metric": "milliseconds",
           "direction": "lower",
+          "target": 2000,
+          "stretch": 1000,
           "runner": "external",
           "status": "adapter-required"
         },
@@ -122,12 +140,15 @@
       "name": "Grounding & RAG",
       "question": "Can the model answer from supplied evidence, cite it, and say when evidence is insufficient?",
       "gate_policy": "answer_quality_and_citation_correctness_and_abstention",
+      "target_policy": "program-floor-v1",
       "benchmarks": [
         {
           "id": "oellm-grounding-holdouts",
           "name": "OpenEuroLLM grounded-QA holdouts",
-          "metric": "rubric_pass_rate",
+          "metric": "grounded_qa_accuracy",
           "direction": "higher",
+          "target": 70,
+          "stretch": 85,
           "runner": "openai-endpoint",
           "status": "operational",
           "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
@@ -137,6 +158,8 @@
           "name": "RAGAS faithfulness",
           "metric": "faithfulness",
           "direction": "higher",
+          "target": 80,
+          "stretch": 90,
           "runner": "external",
           "status": "adapter-required",
           "url": "https://docs.ragas.io/"
@@ -146,6 +169,8 @@
           "name": "EU citation correctness",
           "metric": "citation_f1",
           "direction": "higher",
+          "target": 75,
+          "stretch": 90,
           "runner": "openai-endpoint",
           "status": "planned"
         },
@@ -154,6 +179,8 @@
           "name": "EU insufficient-evidence handling",
           "metric": "abstention_f1",
           "direction": "higher",
+          "target": 80,
+          "stretch": 92,
           "runner": "openai-endpoint",
           "status": "operational"
         }
@@ -165,6 +192,7 @@
       "name": "Instruction & Chat",
       "question": "Does the model follow explicit, compositional, and conversational instructions in target languages?",
       "gate_policy": "retention_and_multilingual_floor",
+      "target_policy": "program-floor-v1",
       "benchmarks": [
         {
           "id": "ifeval",
@@ -222,6 +250,8 @@
           "name": "OpenEuroLLM instruction holdouts",
           "metric": "instruction_following_accuracy",
           "direction": "higher",
+          "target": 75,
+          "stretch": 90,
           "runner": "openai-endpoint",
           "status": "operational",
           "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
@@ -234,6 +264,7 @@
       "name": "Long Context",
       "question": "Does the checkpoint retain, retrieve, and reason over 128K and experimental 256K contexts?",
       "gate_policy": "separate_retrieval_from_reasoning_and_format_compliance",
+      "target_policy": "program-floor-v1",
       "benchmarks": [
         {
           "id": "niah-natural",
@@ -250,6 +281,8 @@
           "name": "NIAH exact output",
           "metric": "exact_format_rate",
           "direction": "higher",
+          "target": 95,
+          "stretch": 100,
           "runner": "builtin-niah",
           "status": "operational"
         },
@@ -268,6 +301,8 @@
           "name": "OneRuler multilingual",
           "metric": "aggregate_accuracy",
           "direction": "higher",
+          "target": 85,
+          "stretch": 95,
           "runner": "external",
           "status": "operational",
           "url": "https://github.com/OpenEuroLLM/OneRuler"
@@ -309,6 +344,7 @@
       "name": "Multilingual",
       "question": "Is the model useful across all 36 project languages, including the weakest language tier?",
       "gate_policy": "macro_p10_min_and_tier_gap",
+      "target_policy": "program-floor-v1",
       "benchmarks": [
         {
           "id": "mmlu-prox",
@@ -337,6 +373,8 @@
           "name": "SIB-200 EU",
           "metric": "accuracy_normalized",
           "direction": "higher",
+          "target": 80,
+          "stretch": 90,
           "runner": "oellm-eval",
           "group": "sib200-eu",
           "status": "operational"
@@ -346,6 +384,8 @@
           "name": "Belebele EU",
           "metric": "accuracy_normalized",
           "direction": "higher",
+          "target": 75,
+          "stretch": 85,
           "runner": "oellm-eval",
           "group": "belebele-eu-5-shot",
           "status": "operational"
@@ -355,6 +395,8 @@
           "name": "FLORES-200 bidirectional EU",
           "metric": "chrf++",
           "direction": "higher",
+          "target": 55,
+          "stretch": 65,
           "runner": "oellm-eval",
           "group": "flores-200-eu-to-eng,flores-200-eng-to-eu",
           "status": "operational"
@@ -384,6 +426,8 @@
           "name": "XWinograd",
           "metric": "accuracy",
           "direction": "higher",
+          "target": 70,
+          "stretch": 80,
           "runner": "oellm-eval",
           "group": "generic-multilingual",
           "status": "operational"
@@ -393,6 +437,8 @@
           "name": "XCOPA",
           "metric": "accuracy",
           "direction": "higher",
+          "target": 75,
+          "stretch": 85,
           "runner": "oellm-eval",
           "group": "generic-multilingual",
           "status": "operational"
@@ -402,6 +448,8 @@
           "name": "XStoryCloze",
           "metric": "accuracy",
           "direction": "higher",
+          "target": 75,
+          "stretch": 85,
           "runner": "oellm-eval",
           "group": "generic-multilingual",
           "status": "operational"
@@ -411,6 +459,8 @@
           "name": "X-CSQA",
           "metric": "accuracy",
           "direction": "higher",
+          "target": 60,
+          "stretch": 72,
           "runner": "oellm-eval",
           "group": "xcsqa-eu",
           "status": "operational"
@@ -420,6 +470,8 @@
           "name": "PAWS-X",
           "metric": "accuracy",
           "direction": "higher",
+          "target": 85,
+          "stretch": 92,
           "runner": "oellm-eval",
           "group": "pawsx-eu",
           "status": "operational"
@@ -429,6 +481,8 @@
           "name": "XNLI",
           "metric": "accuracy",
           "direction": "higher",
+          "target": 80,
+          "stretch": 88,
           "runner": "oellm-eval",
           "group": "xnli-eu",
           "status": "operational"
@@ -438,6 +492,8 @@
           "name": "OpenSubtitles Multi40 translation",
           "metric": "bleu",
           "direction": "higher",
+          "target": 30,
+          "stretch": 40,
           "runner": "oellm-eval",
           "group": "opensubtitles-eu-en-xx,opensubtitles-eu-xx-en",
           "status": "operational"
@@ -447,6 +503,8 @@
           "name": "ARC-Challenge MT EU",
           "metric": "accuracy_normalized",
           "direction": "higher",
+          "target": 55,
+          "stretch": 65,
           "runner": "oellm-eval",
           "group": "arc-challenge-mt-eu",
           "status": "operational"
@@ -456,6 +514,8 @@
           "name": "Global PIQA EU",
           "metric": "accuracy",
           "direction": "higher",
+          "target": 75,
+          "stretch": 83,
           "runner": "oellm-eval",
           "group": "global-piqa-eu-completions,global-piqa-eu-prompted",
           "status": "operational"
@@ -477,12 +537,15 @@
       "name": "Reasoning & Knowledge",
       "question": "Can the model solve math, scientific, factual, and domain questions while retaining knowledge?",
       "gate_policy": "candidate_improves_parent_without_retention_regression",
+      "target_policy": "program-floor-v1",
       "benchmarks": [
         {
           "id": "gsm8k",
           "name": "GSM8K",
-          "metric": "exact_match",
+          "metric": "exact_match_flexible",
           "direction": "higher",
+          "target": 75,
+          "stretch": 90,
           "runner": "oellm-eval",
           "group": "reasoning",
           "status": "operational"
@@ -492,6 +555,8 @@
           "name": "ARC-Challenge",
           "metric": "accuracy_normalized",
           "direction": "higher",
+          "target": 65,
+          "stretch": 75,
           "runner": "oellm-eval",
           "group": "reasoning",
           "status": "operational"
@@ -523,6 +588,8 @@
           "name": "MMLU college computer science",
           "metric": "accuracy",
           "direction": "higher",
+          "target": 65,
+          "stretch": 75,
           "runner": "lm-eval",
           "status": "operational"
         },
@@ -531,6 +598,8 @@
           "name": "MATH-500",
           "metric": "exact_match",
           "direction": "higher",
+          "target": 75,
+          "stretch": 90,
           "runner": "oellm-eval",
           "group": "reasoning",
           "status": "operational"
@@ -540,6 +609,8 @@
           "name": "GPQA Diamond",
           "metric": "accuracy",
           "direction": "higher",
+          "target": 45,
+          "stretch": 60,
           "runner": "oellm-eval",
           "group": "reasoning",
           "status": "license-gated"
@@ -549,6 +620,8 @@
           "name": "OpenEuroLLM reasoning holdouts",
           "metric": "reasoning_math_accuracy",
           "direction": "higher",
+          "target": 70,
+          "stretch": 85,
           "runner": "openai-endpoint",
           "status": "operational",
           "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
@@ -558,6 +631,8 @@
           "name": "AIME 2024",
           "metric": "accuracy",
           "direction": "higher",
+          "target": 25,
+          "stretch": 45,
           "runner": "oellm-eval",
           "group": "reasoning",
           "status": "operational"
@@ -567,6 +642,8 @@
           "name": "AIME 2025",
           "metric": "accuracy",
           "direction": "higher",
+          "target": 20,
+          "stretch": 40,
           "runner": "oellm-eval",
           "group": "reasoning",
           "status": "operational"
@@ -576,6 +653,8 @@
           "name": "AMC 2023",
           "metric": "accuracy",
           "direction": "higher",
+          "target": 70,
+          "stretch": 85,
           "runner": "oellm-eval",
           "group": "reasoning",
           "status": "operational"
@@ -585,6 +664,8 @@
           "name": "Open-Sci retention suite",
           "metric": "primary_task_metric",
           "direction": "higher",
+          "target": 65,
+          "stretch": 75,
           "runner": "oellm-eval",
           "group": "open-sci-0.01",
           "status": "operational"
@@ -594,6 +675,8 @@
           "name": "DCLM-Core-22 retention suite",
           "metric": "primary_task_metric",
           "direction": "higher",
+          "target": 60,
+          "stretch": 70,
           "runner": "oellm-eval",
           "group": "dclm-core-22",
           "status": "operational"
@@ -606,6 +689,7 @@
       "name": "Safety",
       "question": "Does the model avoid harmful assistance without refusing benign requests, including in multi-turn European-language interaction?",
       "gate_policy": "non_compensatory",
+      "target_policy": "program-floor-v1",
       "benchmarks": [
         {
           "id": "harmbench",
@@ -634,6 +718,8 @@
           "name": "StrongREJECT",
           "metric": "harmful_compliance_score",
           "direction": "lower",
+          "target": 10,
+          "stretch": 3,
           "runner": "external",
           "status": "adapter-required",
           "url": "https://strong-reject.readthedocs.io/"
@@ -643,6 +729,8 @@
           "name": "OpenEuroLLM multilingual safety holdouts",
           "metric": "rubric_pass_rate",
           "direction": "higher",
+          "target": 90,
+          "stretch": 97,
           "runner": "openai-endpoint",
           "status": "operational",
           "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
@@ -667,6 +755,7 @@
       "name": "Tools & Agents",
       "question": "Can the model select tools, emit valid calls, use results, and complete multi-step tasks?",
       "gate_policy": "schema_validity_and_task_success",
+      "target_policy": "program-floor-v1",
       "benchmarks": [
         {
           "id": "bfcl",
@@ -704,6 +793,8 @@
           "name": "OpenEuroLLM multilingual tool-call holdouts",
           "metric": "sequence_exact_match",
           "direction": "higher",
+          "target": 75,
+          "stretch": 90,
           "runner": "openai-endpoint",
           "status": "operational",
           "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
@@ -733,8 +824,8 @@
       "total_capability_count": 9,
       "scored_benchmark_count": 5,
       "targets_met": 1,
-      "targets_measured": 3,
-      "target_benchmark_count": 24,
+      "targets_measured": 6,
+      "target_benchmark_count": 62,
       "target_status": "missed",
       "capability_scores": [
         {
@@ -746,9 +837,41 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 0,
-          "target_benchmark_count": 1,
+          "target_benchmark_count": 4,
           "target_status": "not-measured",
           "benchmarks": [
+            {
+              "id": "defect-repair-eu",
+              "name": "OpenEuroLLM defect repair",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 70,
+              "target_metric": "tests_passed_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "humaneval",
+              "name": "HumanEval",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 70,
+              "target_metric": "pass_at_1",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
             {
               "id": "livecodebench",
               "name": "LiveCodeBench",
@@ -761,6 +884,24 @@
               "target_metric": "pass_at_1",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "mbpp",
+              "name": "MBPP",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 65,
+              "target_metric": "pass_at_1",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             }
           ]
@@ -774,7 +915,7 @@
           "diagnostic_only": false,
           "targets_met": 1,
           "targets_measured": 1,
-          "target_benchmark_count": 3,
+          "target_benchmark_count": 5,
           "target_status": "partial",
           "benchmarks": [
             {
@@ -793,6 +934,8 @@
               "target_metric": "checks_pass_rate",
               "target_direction": "higher",
               "target_value": 100.0,
+              "target_gap": 0.0,
+              "target_scale": "percentage",
               "target_status": "met"
             },
             {
@@ -807,6 +950,8 @@
               "target_metric": "macro_score_loss_points",
               "target_direction": "lower",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -821,6 +966,40 @@
               "target_metric": "checks_pass_rate",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "throughput",
+              "name": "Serving throughput",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 15,
+              "target_metric": "output_tokens_per_second",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "time-to-first-token",
+              "name": "Time to first token",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 2000,
+              "target_metric": "milliseconds",
+              "target_direction": "lower",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             }
           ]
@@ -834,9 +1013,74 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 0,
-          "target_benchmark_count": 0,
-          "target_status": "not-set",
-          "benchmarks": []
+          "target_benchmark_count": 4,
+          "target_status": "not-measured",
+          "benchmarks": [
+            {
+              "id": "citation-correctness-eu",
+              "name": "EU citation correctness",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "citation_f1",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "insufficient-evidence-eu",
+              "name": "EU insufficient-evidence handling",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 80,
+              "target_metric": "abstention_f1",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "oellm-grounding-holdouts",
+              "name": "OpenEuroLLM grounded-QA holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 70,
+              "target_metric": "grounded_qa_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "ragas-faithfulness",
+              "name": "RAGAS faithfulness",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 80,
+              "target_metric": "faithfulness",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            }
+          ]
         },
         {
           "id": "instruction-chat",
@@ -847,7 +1091,7 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 1,
-          "target_benchmark_count": 5,
+          "target_benchmark_count": 6,
           "target_status": "missed",
           "benchmarks": [
             {
@@ -862,6 +1106,8 @@
               "target_metric": "win_rate",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -876,6 +1122,8 @@
               "target_metric": "accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -894,6 +1142,8 @@
               "target_metric": "prompt_level_strict_accuracy",
               "target_direction": "higher",
               "target_value": 26.6,
+              "target_gap": -48.4,
+              "target_scale": "percentage",
               "target_status": "missed"
             },
             {
@@ -908,6 +1158,8 @@
               "target_metric": "rank",
               "target_direction": "lower",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -922,6 +1174,24 @@
               "target_metric": "accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "oellm-instruction-holdouts",
+              "name": "OpenEuroLLM instruction holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "instruction_following_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             }
           ]
@@ -935,7 +1205,7 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 0,
-          "target_benchmark_count": 4,
+          "target_benchmark_count": 6,
           "target_status": "not-measured",
           "benchmarks": [
             {
@@ -950,6 +1220,8 @@
               "target_metric": "aggregate_score",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -964,6 +1236,24 @@
               "target_metric": "accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "niah-exact-format",
+              "name": "NIAH exact output",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 95,
+              "target_metric": "exact_format_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -978,6 +1268,24 @@
               "target_metric": "full_retrieval_rate",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "oneruler",
+              "name": "OneRuler multilingual",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 85,
+              "target_metric": "aggregate_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -992,6 +1300,8 @@
               "target_metric": "aggregate_accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             }
           ]
@@ -1005,9 +1315,41 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 0,
-          "target_benchmark_count": 4,
+          "target_benchmark_count": 16,
           "target_status": "not-measured",
           "benchmarks": [
+            {
+              "id": "arc-challenge-mt",
+              "name": "ARC-Challenge MT EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 55,
+              "target_metric": "accuracy_normalized",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "belebele",
+              "name": "Belebele EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "accuracy_normalized",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
             {
               "id": "eu-language-fidelity",
               "name": "EU language fidelity",
@@ -1020,6 +1362,24 @@
               "target_metric": "correct_language_rate",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "flores-200",
+              "name": "FLORES-200 bidirectional EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 55,
+              "target_metric": "chrf++",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1034,6 +1394,24 @@
               "target_metric": "accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "global-piqa",
+              "name": "Global PIQA EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1048,6 +1426,8 @@
               "target_metric": "accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1062,6 +1442,136 @@
               "target_metric": "exact_match",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "opensubtitles-multi40",
+              "name": "OpenSubtitles Multi40 translation",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 30,
+              "target_metric": "bleu",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "paws-x",
+              "name": "PAWS-X",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 85,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "sib-200",
+              "name": "SIB-200 EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 80,
+              "target_metric": "accuracy_normalized",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "xcopa",
+              "name": "XCOPA",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "xcsqa",
+              "name": "X-CSQA",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 60,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "xnli",
+              "name": "XNLI",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 80,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "xstorycloze",
+              "name": "XStoryCloze",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "xwinograd",
+              "name": "XWinograd",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 70,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             }
           ]
@@ -1074,10 +1584,58 @@
           "measurement_count": 8,
           "diagnostic_only": false,
           "targets_met": 0,
-          "targets_measured": 1,
-          "target_benchmark_count": 2,
+          "targets_measured": 4,
+          "target_benchmark_count": 13,
           "target_status": "missed",
           "benchmarks": [
+            {
+              "id": "aime24",
+              "name": "AIME 2024",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 25,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "aime25",
+              "name": "AIME 2025",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 20,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "amc23",
+              "name": "AMC 2023",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 70,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
             {
               "id": "arc-challenge",
               "name": "ARC-Challenge",
@@ -1090,11 +1648,45 @@
                 "imported-published"
               ],
               "diagnostic_only": false,
-              "target": null,
+              "target": 65,
               "target_metric": "accuracy_normalized",
               "target_direction": "higher",
+              "target_value": 51.9,
+              "target_gap": -13.1,
+              "target_scale": "percentage",
+              "target_status": "missed"
+            },
+            {
+              "id": "dclm-core",
+              "name": "DCLM-Core-22 retention suite",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 60,
+              "target_metric": "primary_task_metric",
+              "target_direction": "higher",
               "target_value": null,
-              "target_status": "not-set"
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "gpqa-diamond",
+              "name": "GPQA Diamond",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 45,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
             },
             {
               "id": "gsm8k",
@@ -1108,11 +1700,29 @@
                 "imported-published"
               ],
               "diagnostic_only": false,
-              "target": null,
+              "target": 75,
+              "target_metric": "exact_match_flexible",
+              "target_direction": "higher",
+              "target_value": 29.6,
+              "target_gap": -45.4,
+              "target_scale": "percentage",
+              "target_status": "missed"
+            },
+            {
+              "id": "math-500",
+              "name": "MATH-500",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
               "target_metric": "exact_match",
               "target_direction": "higher",
               "target_value": null,
-              "target_status": "not-set"
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
             },
             {
               "id": "mgsm",
@@ -1130,6 +1740,8 @@
               "target_metric": "flexible_exact_match",
               "target_direction": "higher",
               "target_value": 27.2,
+              "target_gap": -50.8,
+              "target_scale": "percentage",
               "target_status": "missed"
             },
             {
@@ -1144,11 +1756,45 @@
                 "imported-published"
               ],
               "diagnostic_only": false,
-              "target": null,
+              "target": 65,
               "target_metric": "accuracy",
               "target_direction": "higher",
+              "target_value": 48.0,
+              "target_gap": -17.0,
+              "target_scale": "percentage",
+              "target_status": "missed"
+            },
+            {
+              "id": "oellm-reasoning-holdouts",
+              "name": "OpenEuroLLM reasoning holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 70,
+              "target_metric": "reasoning_math_accuracy",
+              "target_direction": "higher",
               "target_value": null,
-              "target_status": "not-set"
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "open-sci",
+              "name": "Open-Sci retention suite",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 65,
+              "target_metric": "primary_task_metric",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
             },
             {
               "id": "polymath",
@@ -1162,6 +1808,8 @@
               "target_metric": "exact_match",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             }
           ]
@@ -1175,7 +1823,7 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 0,
-          "target_benchmark_count": 2,
+          "target_benchmark_count": 4,
           "target_status": "not-measured",
           "benchmarks": [
             {
@@ -1190,6 +1838,40 @@
               "target_metric": "attack_success_rate",
               "target_direction": "lower",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "oellm-safety-holdouts",
+              "name": "OpenEuroLLM multilingual safety holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 90,
+              "target_metric": "rubric_pass_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "strongreject",
+              "name": "StrongREJECT",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 10,
+              "target_metric": "harmful_compliance_score",
+              "target_direction": "lower",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1204,6 +1886,8 @@
               "target_metric": "safe_prompt_refusal_rate",
               "target_direction": "lower",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             }
           ]
@@ -1217,7 +1901,7 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 0,
-          "target_benchmark_count": 3,
+          "target_benchmark_count": 4,
           "target_status": "not-measured",
           "benchmarks": [
             {
@@ -1232,6 +1916,8 @@
               "target_metric": "overall_accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1246,6 +1932,24 @@
               "target_metric": "accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "oellm-tool-holdouts",
+              "name": "OpenEuroLLM multilingual tool-call holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "sequence_exact_match",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1260,6 +1964,8 @@
               "target_metric": "pass_rate",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             }
           ]
@@ -1289,8 +1995,8 @@
       "total_capability_count": 9,
       "scored_benchmark_count": 11,
       "targets_met": 2,
-      "targets_measured": 4,
-      "target_benchmark_count": 24,
+      "targets_measured": 12,
+      "target_benchmark_count": 62,
       "target_status": "missed",
       "capability_scores": [
         {
@@ -1302,9 +2008,41 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 0,
-          "target_benchmark_count": 1,
+          "target_benchmark_count": 4,
           "target_status": "not-measured",
           "benchmarks": [
+            {
+              "id": "defect-repair-eu",
+              "name": "OpenEuroLLM defect repair",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 70,
+              "target_metric": "tests_passed_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "humaneval",
+              "name": "HumanEval",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 70,
+              "target_metric": "pass_at_1",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
             {
               "id": "livecodebench",
               "name": "LiveCodeBench",
@@ -1317,6 +2055,24 @@
               "target_metric": "pass_at_1",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "mbpp",
+              "name": "MBPP",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 65,
+              "target_metric": "pass_at_1",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             }
           ]
@@ -1330,7 +2086,7 @@
           "diagnostic_only": false,
           "targets_met": 1,
           "targets_measured": 1,
-          "target_benchmark_count": 3,
+          "target_benchmark_count": 5,
           "target_status": "partial",
           "benchmarks": [
             {
@@ -1349,6 +2105,8 @@
               "target_metric": "checks_pass_rate",
               "target_direction": "higher",
               "target_value": 100.0,
+              "target_gap": 0.0,
+              "target_scale": "percentage",
               "target_status": "met"
             },
             {
@@ -1363,6 +2121,8 @@
               "target_metric": "macro_score_loss_points",
               "target_direction": "lower",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1377,6 +2137,40 @@
               "target_metric": "checks_pass_rate",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "throughput",
+              "name": "Serving throughput",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 15,
+              "target_metric": "output_tokens_per_second",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "time-to-first-token",
+              "name": "Time to first token",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 2000,
+              "target_metric": "milliseconds",
+              "target_direction": "lower",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             }
           ]
@@ -1389,10 +2183,42 @@
           "measurement_count": 1,
           "diagnostic_only": false,
           "targets_met": 0,
-          "targets_measured": 0,
-          "target_benchmark_count": 0,
-          "target_status": "not-set",
+          "targets_measured": 1,
+          "target_benchmark_count": 4,
+          "target_status": "missed",
           "benchmarks": [
+            {
+              "id": "citation-correctness-eu",
+              "name": "EU citation correctness",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "citation_f1",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "insufficient-evidence-eu",
+              "name": "EU insufficient-evidence handling",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 80,
+              "target_metric": "abstention_f1",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
             {
               "id": "oellm-grounding-holdouts",
               "name": "OpenEuroLLM grounded-QA holdouts",
@@ -1405,11 +2231,29 @@
                 "imported-published"
               ],
               "diagnostic_only": false,
-              "target": null,
-              "target_metric": "rubric_pass_rate",
+              "target": 70,
+              "target_metric": "grounded_qa_accuracy",
+              "target_direction": "higher",
+              "target_value": 58.6,
+              "target_gap": -11.4,
+              "target_scale": "percentage",
+              "target_status": "missed"
+            },
+            {
+              "id": "ragas-faithfulness",
+              "name": "RAGAS faithfulness",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 80,
+              "target_metric": "faithfulness",
               "target_direction": "higher",
               "target_value": null,
-              "target_status": "not-set"
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
             }
           ]
         },
@@ -1421,8 +2265,8 @@
           "measurement_count": 3,
           "diagnostic_only": false,
           "targets_met": 0,
-          "targets_measured": 1,
-          "target_benchmark_count": 5,
+          "targets_measured": 2,
+          "target_benchmark_count": 6,
           "target_status": "missed",
           "benchmarks": [
             {
@@ -1437,6 +2281,8 @@
               "target_metric": "win_rate",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1451,6 +2297,8 @@
               "target_metric": "accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1469,6 +2317,8 @@
               "target_metric": "prompt_level_strict_accuracy",
               "target_direction": "higher",
               "target_value": 41.0,
+              "target_gap": -34.0,
+              "target_scale": "percentage",
               "target_status": "missed"
             },
             {
@@ -1483,6 +2333,8 @@
               "target_metric": "rank",
               "target_direction": "lower",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1497,6 +2349,8 @@
               "target_metric": "accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1511,11 +2365,13 @@
                 "imported-published"
               ],
               "diagnostic_only": false,
-              "target": null,
+              "target": 75,
               "target_metric": "instruction_following_accuracy",
               "target_direction": "higher",
-              "target_value": null,
-              "target_status": "not-set"
+              "target_value": 63.2,
+              "target_gap": -11.8,
+              "target_scale": "percentage",
+              "target_status": "missed"
             }
           ]
         },
@@ -1527,9 +2383,9 @@
           "measurement_count": 5,
           "diagnostic_only": false,
           "targets_met": 1,
-          "targets_measured": 1,
-          "target_benchmark_count": 4,
-          "target_status": "partial",
+          "targets_measured": 2,
+          "target_benchmark_count": 6,
+          "target_status": "missed",
           "benchmarks": [
             {
               "id": "longbench",
@@ -1543,6 +2399,8 @@
               "target_metric": "aggregate_score",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1557,6 +2415,8 @@
               "target_metric": "accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1571,11 +2431,13 @@
                 "imported-published"
               ],
               "diagnostic_only": false,
-              "target": null,
+              "target": 95,
               "target_metric": "exact_format_rate",
               "target_direction": "higher",
-              "target_value": null,
-              "target_status": "not-set"
+              "target_value": 35.0,
+              "target_gap": -60.0,
+              "target_scale": "percentage",
+              "target_status": "missed"
             },
             {
               "id": "niah-natural",
@@ -1593,7 +2455,25 @@
               "target_metric": "full_retrieval_rate",
               "target_direction": "higher",
               "target_value": 100.0,
+              "target_gap": 5.0,
+              "target_scale": "percentage",
               "target_status": "met"
+            },
+            {
+              "id": "oneruler",
+              "name": "OneRuler multilingual",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 85,
+              "target_metric": "aggregate_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
             },
             {
               "id": "ruler",
@@ -1607,6 +2487,8 @@
               "target_metric": "aggregate_accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             }
           ]
@@ -1620,9 +2502,41 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 0,
-          "target_benchmark_count": 4,
+          "target_benchmark_count": 16,
           "target_status": "not-measured",
           "benchmarks": [
+            {
+              "id": "arc-challenge-mt",
+              "name": "ARC-Challenge MT EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 55,
+              "target_metric": "accuracy_normalized",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "belebele",
+              "name": "Belebele EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "accuracy_normalized",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
             {
               "id": "eu-language-fidelity",
               "name": "EU language fidelity",
@@ -1635,6 +2549,24 @@
               "target_metric": "correct_language_rate",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "flores-200",
+              "name": "FLORES-200 bidirectional EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 55,
+              "target_metric": "chrf++",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1649,6 +2581,24 @@
               "target_metric": "accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "global-piqa",
+              "name": "Global PIQA EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1663,6 +2613,8 @@
               "target_metric": "accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1677,6 +2629,136 @@
               "target_metric": "exact_match",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "opensubtitles-multi40",
+              "name": "OpenSubtitles Multi40 translation",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 30,
+              "target_metric": "bleu",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "paws-x",
+              "name": "PAWS-X",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 85,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "sib-200",
+              "name": "SIB-200 EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 80,
+              "target_metric": "accuracy_normalized",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "xcopa",
+              "name": "XCOPA",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "xcsqa",
+              "name": "X-CSQA",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 60,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "xnli",
+              "name": "XNLI",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 80,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "xstorycloze",
+              "name": "XStoryCloze",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "xwinograd",
+              "name": "XWinograd",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 70,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             }
           ]
@@ -1689,10 +2771,58 @@
           "measurement_count": 10,
           "diagnostic_only": false,
           "targets_met": 0,
-          "targets_measured": 1,
-          "target_benchmark_count": 2,
+          "targets_measured": 6,
+          "target_benchmark_count": 13,
           "target_status": "missed",
           "benchmarks": [
+            {
+              "id": "aime24",
+              "name": "AIME 2024",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 25,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "aime25",
+              "name": "AIME 2025",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 20,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "amc23",
+              "name": "AMC 2023",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 70,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
             {
               "id": "arc-challenge",
               "name": "ARC-Challenge",
@@ -1705,11 +2835,45 @@
                 "imported-published"
               ],
               "diagnostic_only": false,
-              "target": null,
+              "target": 65,
               "target_metric": "accuracy_normalized",
               "target_direction": "higher",
+              "target_value": 50.1,
+              "target_gap": -14.9,
+              "target_scale": "percentage",
+              "target_status": "missed"
+            },
+            {
+              "id": "dclm-core",
+              "name": "DCLM-Core-22 retention suite",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 60,
+              "target_metric": "primary_task_metric",
+              "target_direction": "higher",
               "target_value": null,
-              "target_status": "not-set"
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "gpqa-diamond",
+              "name": "GPQA Diamond",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 45,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
             },
             {
               "id": "gsm8k",
@@ -1723,11 +2887,13 @@
                 "imported-published"
               ],
               "diagnostic_only": false,
-              "target": null,
-              "target_metric": "exact_match",
+              "target": 75,
+              "target_metric": "exact_match_flexible",
               "target_direction": "higher",
-              "target_value": null,
-              "target_status": "not-set"
+              "target_value": 30.9,
+              "target_gap": -44.1,
+              "target_scale": "percentage",
+              "target_status": "missed"
             },
             {
               "id": "math-500",
@@ -1741,11 +2907,13 @@
                 "imported-published"
               ],
               "diagnostic_only": false,
-              "target": null,
+              "target": 75,
               "target_metric": "exact_match",
               "target_direction": "higher",
-              "target_value": null,
-              "target_status": "not-set"
+              "target_value": 0.4,
+              "target_gap": -74.6,
+              "target_scale": "percentage",
+              "target_status": "missed"
             },
             {
               "id": "mgsm",
@@ -1763,6 +2931,8 @@
               "target_metric": "flexible_exact_match",
               "target_direction": "higher",
               "target_value": 21.7,
+              "target_gap": -56.3,
+              "target_scale": "percentage",
               "target_status": "missed"
             },
             {
@@ -1777,11 +2947,13 @@
                 "imported-published"
               ],
               "diagnostic_only": false,
-              "target": null,
+              "target": 65,
               "target_metric": "accuracy",
               "target_direction": "higher",
-              "target_value": null,
-              "target_status": "not-set"
+              "target_value": 51.0,
+              "target_gap": -14.0,
+              "target_scale": "percentage",
+              "target_status": "missed"
             },
             {
               "id": "oellm-reasoning-holdouts",
@@ -1795,11 +2967,29 @@
                 "imported-published"
               ],
               "diagnostic_only": false,
-              "target": null,
+              "target": 70,
               "target_metric": "reasoning_math_accuracy",
               "target_direction": "higher",
+              "target_value": 5.9,
+              "target_gap": -64.1,
+              "target_scale": "percentage",
+              "target_status": "missed"
+            },
+            {
+              "id": "open-sci",
+              "name": "Open-Sci retention suite",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 65,
+              "target_metric": "primary_task_metric",
+              "target_direction": "higher",
               "target_value": null,
-              "target_status": "not-set"
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
             },
             {
               "id": "polymath",
@@ -1813,6 +3003,8 @@
               "target_metric": "exact_match",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             }
           ]
@@ -1826,7 +3018,7 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 0,
-          "target_benchmark_count": 2,
+          "target_benchmark_count": 4,
           "target_status": "not-measured",
           "benchmarks": [
             {
@@ -1841,6 +3033,40 @@
               "target_metric": "attack_success_rate",
               "target_direction": "lower",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "oellm-safety-holdouts",
+              "name": "OpenEuroLLM multilingual safety holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 90,
+              "target_metric": "rubric_pass_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "strongreject",
+              "name": "StrongREJECT",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 10,
+              "target_metric": "harmful_compliance_score",
+              "target_direction": "lower",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1855,6 +3081,8 @@
               "target_metric": "safe_prompt_refusal_rate",
               "target_direction": "lower",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             }
           ]
@@ -1868,7 +3096,7 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 0,
-          "target_benchmark_count": 3,
+          "target_benchmark_count": 4,
           "target_status": "not-measured",
           "benchmarks": [
             {
@@ -1883,6 +3111,8 @@
               "target_metric": "overall_accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1897,6 +3127,24 @@
               "target_metric": "accuracy",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "oellm-tool-holdouts",
+              "name": "OpenEuroLLM multilingual tool-call holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "sequence_exact_match",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             },
             {
@@ -1911,6 +3159,8 @@
               "target_metric": "pass_rate",
               "target_direction": "higher",
               "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
               "target_status": "not-measured"
             }
           ]

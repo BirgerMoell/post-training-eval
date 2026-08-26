@@ -4,12 +4,12 @@
   "name": "Efficiency & Release",
   "question": "Is the release complete, reproducible, fast enough, and robust after quantization?",
   "gate_policy": "all_artifacts_and_quantization_retention_required",
+  "target_policy": "program-floor-v1",
   "benchmarks": [
     {"id": "checkpoint-compatibility", "name": "Checkpoint compatibility", "metric": "checks_pass_rate", "direction": "higher", "target": 100, "stretch": 100, "runner": "inspect", "status": "operational"},
-    {"id": "throughput", "name": "Serving throughput", "metric": "output_tokens_per_second", "direction": "higher", "runner": "external", "status": "adapter-required"},
-    {"id": "time-to-first-token", "name": "Time to first token", "metric": "milliseconds", "direction": "lower", "runner": "external", "status": "adapter-required"},
+    {"id": "throughput", "name": "Serving throughput", "metric": "output_tokens_per_second", "direction": "higher", "target": 15, "stretch": 30, "runner": "external", "status": "adapter-required"},
+    {"id": "time-to-first-token", "name": "Time to first token", "metric": "milliseconds", "direction": "lower", "target": 2000, "stretch": 1000, "runner": "external", "status": "adapter-required"},
     {"id": "quantization-retention", "name": "Quantization retention", "metric": "macro_score_loss_points", "direction": "lower", "target": 1, "stretch": 0.5, "runner": "external", "status": "adapter-required"},
     {"id": "release-completeness", "name": "Release artifact completeness", "metric": "checks_pass_rate", "direction": "higher", "target": 100, "stretch": 100, "runner": "inspect", "status": "operational"}
   ]
 }
-

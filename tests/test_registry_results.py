@@ -177,10 +177,26 @@ class RegistryResultTests(unittest.TestCase):
         scorecard = _build_model_scorecard("owner/model", [run], capabilities)
         benchmarks = {item["id"]: item for item in scorecard["capability_scores"][0]["benchmarks"]}
         self.assertEqual(benchmarks["high"]["target_status"], "met")
+        self.assertEqual(benchmarks["high"]["target_gap"], 15.0)
         self.assertEqual(benchmarks["low"]["target_status"], "missed")
+        self.assertEqual(benchmarks["low"]["target_gap"], -3.0)
         self.assertEqual(scorecard["target_status"], "missed")
         self.assertEqual(scorecard["targets_measured"], 2)
         self.assertEqual(scorecard["target_benchmark_count"], 3)
+
+    def test_scorecard_reports_gap_for_non_percentage_target(self):
+        capabilities = [{"id": "release", "name": "Release", "benchmarks": [
+            {"id": "rank", "name": "Rank", "metric": "rank", "direction": "lower", "target": 200},
+        ]}]
+        run = {"run_id": "run", "status": "completed", "model": {"id": "owner/model"}, "provenance": {"kind": "fresh-reproduced"}, "metrics": [
+            {"capability": "release", "benchmark": "rank", "metric": "rank", "value": 250, "scale": "rank"},
+        ]}
+        scorecard = _build_model_scorecard("owner/model", [run], capabilities)
+        benchmark = scorecard["capability_scores"][0]["benchmarks"][0]
+        self.assertEqual(benchmark["target_status"], "missed")
+        self.assertEqual(benchmark["target_gap"], -50.0)
+        self.assertEqual(benchmark["target_scale"], "rank")
+        self.assertIsNone(scorecard["aggregate_score"])
 
     def test_scorecard_weights_capabilities_equally_and_keeps_missing_visible(self):
         capabilities = [

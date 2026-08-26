@@ -4,11 +4,11 @@
   "name": "Coding",
   "question": "Can the model write correct code and repair defects without losing general capabilities?",
   "gate_policy": "execution_based_and_contamination_aware",
+  "target_policy": "program-floor-v1",
   "benchmarks": [
     {"id": "livecodebench", "name": "LiveCodeBench", "metric": "pass_at_1", "direction": "higher", "target": 55, "stretch": 80, "runner": "oellm-eval", "group": "reasoning", "status": "operational"},
-    {"id": "humaneval", "name": "HumanEval", "metric": "pass_at_1", "direction": "higher", "runner": "oellm-eval", "group": "reasoning", "status": "operational"},
-    {"id": "mbpp", "name": "MBPP", "metric": "pass_at_1", "direction": "higher", "runner": "oellm-eval", "group": "reasoning", "status": "operational"},
-    {"id": "defect-repair-eu", "name": "OpenEuroLLM defect repair", "metric": "tests_passed_rate", "direction": "higher", "runner": "openai-endpoint", "status": "operational"}
+    {"id": "humaneval", "name": "HumanEval", "metric": "pass_at_1", "direction": "higher", "target": 70, "stretch": 85, "runner": "oellm-eval", "group": "reasoning", "status": "operational"},
+    {"id": "mbpp", "name": "MBPP", "metric": "pass_at_1", "direction": "higher", "target": 65, "stretch": 80, "runner": "oellm-eval", "group": "reasoning", "status": "operational"},
+    {"id": "defect-repair-eu", "name": "OpenEuroLLM defect repair", "metric": "tests_passed_rate", "direction": "higher", "target": 70, "stretch": 85, "runner": "openai-endpoint", "status": "operational"}
   ]
 }
-

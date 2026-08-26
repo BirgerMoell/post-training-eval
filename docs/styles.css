@@ -162,6 +162,11 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 28px 50px; color: var(--m
 .evidence-panel > summary #result-count { color: var(--muted); font-size: 12px; }
 .evidence-content { padding: 0 28px 28px; border-top: 1px solid var(--line); }
 .target-threshold { display: block; margin-top: 5px; color: var(--muted); font-size: 10px; }
+.target-gap { display: block; width: max-content; max-width: 100%; margin-top: 5px; padding: 3px 5px; font: 750 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; }
+.target-gap.met { background: #e4f4d3; color: #31530b; }
+.target-gap.missed { background: #ffe0d5; color: #8b2d0c; }
+.benchmark-model-cell .target-gap { grid-column: 1 / -1; }
+.target-method { margin-top: 6px; }
 .playbook-bottom { margin-top: 44px; }
 
 .skill-hero { padding-bottom: 64px; }

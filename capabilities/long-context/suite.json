@@ -4,14 +4,14 @@
   "name": "Long Context",
   "question": "Does the checkpoint retain, retrieve, and reason over 128K and experimental 256K contexts?",
   "gate_policy": "separate_retrieval_from_reasoning_and_format_compliance",
+  "target_policy": "program-floor-v1",
   "benchmarks": [
     {"id": "niah-natural", "name": "Deterministic natural-word NIAH", "metric": "full_retrieval_rate", "direction": "higher", "target": 95, "stretch": 100, "runner": "builtin-niah", "status": "operational"},
-    {"id": "niah-exact-format", "name": "NIAH exact output", "metric": "exact_format_rate", "direction": "higher", "runner": "builtin-niah", "status": "operational"},
+    {"id": "niah-exact-format", "name": "NIAH exact output", "metric": "exact_format_rate", "direction": "higher", "target": 95, "stretch": 100, "runner": "builtin-niah", "status": "operational"},
     {"id": "ruler", "name": "RULER", "metric": "aggregate_accuracy", "direction": "higher", "target": 95, "runner": "external", "status": "adapter-required", "url": "https://github.com/NVIDIA/RULER"},
-    {"id": "oneruler", "name": "OneRuler multilingual", "metric": "aggregate_accuracy", "direction": "higher", "runner": "external", "status": "operational", "url": "https://github.com/OpenEuroLLM/OneRuler"},
+    {"id": "oneruler", "name": "OneRuler multilingual", "metric": "aggregate_accuracy", "direction": "higher", "target": 85, "stretch": 95, "runner": "external", "status": "operational", "url": "https://github.com/OpenEuroLLM/OneRuler"},
     {"id": "longbench", "name": "LongBench", "metric": "aggregate_score", "direction": "higher", "target": 50, "stretch": 61, "runner": "external", "status": "adapter-required"},
     {"id": "mrcr-128k", "name": "MRCR 128K", "metric": "accuracy", "direction": "higher", "target": 35, "stretch": 67, "runner": "external", "status": "adapter-required"}
   ],
   "required_slices": ["4K", "32K", "128K", "256K", "five-depth-grid", "distractor-strength", "multilingual"]
 }
-

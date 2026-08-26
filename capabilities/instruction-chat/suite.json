@@ -4,12 +4,13 @@
   "name": "Instruction & Chat",
   "question": "Does the model follow explicit, compositional, and conversational instructions in target languages?",
   "gate_policy": "retention_and_multilingual_floor",
+  "target_policy": "program-floor-v1",
   "benchmarks": [
     {"id": "ifeval", "name": "IFEval", "metric": "prompt_level_strict_accuracy", "direction": "higher", "target": 75, "stretch": 90, "runner": "oellm-eval", "group": "reasoning", "status": "operational"},
     {"id": "ifbench", "name": "IFBench", "metric": "accuracy", "direction": "higher", "target": 60, "stretch": 76, "runner": "external", "status": "adapter-required"},
     {"id": "maxife", "name": "MultiChallenge/MAXIFE", "metric": "accuracy", "direction": "higher", "target": 80, "stretch": 88, "runner": "external", "status": "adapter-required"},
     {"id": "arena-hard-eu", "name": "ArenaHard-EU", "metric": "win_rate", "direction": "higher", "target": 50, "runner": "external", "status": "adapter-required", "url": "https://huggingface.co/datasets/openeurollm/ArenaHard-EU-v0"},
     {"id": "lmarena-rank", "name": "LMArena rank", "metric": "rank", "direction": "lower", "target": 200, "stretch": 50, "runner": "external", "status": "submission-required"},
-    {"id": "oellm-instruction-holdouts", "name": "OpenEuroLLM instruction holdouts", "metric": "instruction_following_accuracy", "direction": "higher", "runner": "openai-endpoint", "status": "operational", "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"}
+    {"id": "oellm-instruction-holdouts", "name": "OpenEuroLLM instruction holdouts", "metric": "instruction_following_accuracy", "direction": "higher", "target": 75, "stretch": 90, "runner": "openai-endpoint", "status": "operational", "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"}
   ]
 }

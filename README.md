@@ -34,6 +34,8 @@ The installer refuses to overwrite an existing skill. Repository-scoped discover
 
 The nine capability folders are the source of truth: Safety, Multilingual, Instruction & Chat, Reasoning & Knowledge, Grounding & RAG, Tools & Agents, Long Context, Coding, and Efficiency & Release. Each `suite.json` records benchmark, metric, direction, target, runner, and implementation status.
 
+Every registered evaluation has a numeric release floor under [`program-floor-v1`](docs/TARGETS.md). The dashboard shows both target status and the exact direction-aware gap for every measured primary metric. These are versioned program targets and should be recalibrated only through review after a protocol-matched baseline sweep.
+
 The executable core reuses [OpenEuroLLM/oellm-eval](https://github.com/OpenEuroLLM/oellm-eval) for SLURM scheduling, lm-evaluation-harness, lighteval, and Evalchemy. The repository adds checkpoint preparation, explicit evaluation profiles, a deterministic NIAH runner, an OpenAI-compatible multilingual holdout runner, normalized result ingestion, and GitHub Pages publication.
 
 ## Quick start
