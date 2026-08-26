@@ -392,6 +392,60 @@
           "runner": "oellm-eval",
           "group": "generic-multilingual",
           "status": "operational"
+        },
+        {
+          "id": "xcsqa",
+          "name": "X-CSQA",
+          "metric": "accuracy",
+          "direction": "higher",
+          "runner": "oellm-eval",
+          "group": "xcsqa-eu",
+          "status": "operational"
+        },
+        {
+          "id": "paws-x",
+          "name": "PAWS-X",
+          "metric": "accuracy",
+          "direction": "higher",
+          "runner": "oellm-eval",
+          "group": "pawsx-eu",
+          "status": "operational"
+        },
+        {
+          "id": "xnli",
+          "name": "XNLI",
+          "metric": "accuracy",
+          "direction": "higher",
+          "runner": "oellm-eval",
+          "group": "xnli-eu",
+          "status": "operational"
+        },
+        {
+          "id": "opensubtitles-multi40",
+          "name": "OpenSubtitles Multi40 translation",
+          "metric": "bleu",
+          "direction": "higher",
+          "runner": "oellm-eval",
+          "group": "opensubtitles-eu-en-xx,opensubtitles-eu-xx-en",
+          "status": "operational"
+        },
+        {
+          "id": "arc-challenge-mt",
+          "name": "ARC-Challenge MT EU",
+          "metric": "accuracy_normalized",
+          "direction": "higher",
+          "runner": "oellm-eval",
+          "group": "arc-challenge-mt-eu",
+          "status": "operational"
+        },
+        {
+          "id": "global-piqa",
+          "name": "Global PIQA EU",
+          "metric": "accuracy",
+          "direction": "higher",
+          "runner": "oellm-eval",
+          "group": "global-piqa-eu-completions,global-piqa-eu-prompted",
+          "status": "operational"
         }
       ],
       "required_aggregations": [
@@ -511,6 +565,24 @@
           "direction": "higher",
           "runner": "oellm-eval",
           "group": "reasoning",
+          "status": "operational"
+        },
+        {
+          "id": "open-sci",
+          "name": "Open-Sci retention suite",
+          "metric": "primary_task_metric",
+          "direction": "higher",
+          "runner": "oellm-eval",
+          "group": "open-sci-0.01",
+          "status": "operational"
+        },
+        {
+          "id": "dclm-core",
+          "name": "DCLM-Core-22 retention suite",
+          "metric": "primary_task_metric",
+          "direction": "higher",
+          "runner": "oellm-eval",
+          "group": "dclm-core-22",
           "status": "operational"
         }
       ]
