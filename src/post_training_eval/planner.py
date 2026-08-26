@@ -15,7 +15,7 @@ def _command_for(step: dict[str, Any], ref: CheckpointRef, limit_override: int |
     model = ref.runner_model
     limit = limit_override if limit_override is not None else step.get("limit")
     if driver == "inspect":
-        return ["pteval", "inspect", "--model", model]
+        return ["pteval", "inspect", "--model", ref.cli_reference]
     if driver == "oellm-eval":
         command = ["oellm-eval", "schedule", "--models", model, "--task_groups", ",".join(step["task_groups"])]
         if limit:

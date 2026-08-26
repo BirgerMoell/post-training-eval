@@ -27,6 +27,16 @@ class CheckpointRef:
             return self.location
         return self.location
 
+    @property
+    def cli_reference(self) -> str:
+        if self.format == "hf_hub":
+            return f"hf://{self.location}{('@' + self.revision) if self.revision else ''}"
+        if self.format == "megatron":
+            return f"megatron://{self.location}"
+        if self.format == "openai_endpoint":
+            return f"openai://{self.location}"
+        return self.location
+
 
 def parse_checkpoint(value: str) -> CheckpointRef:
     if value.startswith("hf://"):
