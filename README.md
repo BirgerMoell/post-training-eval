@@ -89,6 +89,8 @@ PYTHONPATH=/path/to/oellm-eval pteval local-quick \
 
 Use `--suite lm-eval-harness` while validating one runtime. Repeating the same command resumes completed batches from `manifest.json`; failed or interrupted batches are rerun. Two models can run concurrently on separate GPUs by using distinct output directories and `--gpu 0` / `--gpu 1`.
 
+At the currently pinned Lighteval revision, keep `xxhash<4` in its isolated tool environment; `xxhash` 4.x rejects the string hashing call used while saving per-example details. The runner was smoke-tested with `xxhash==3.6.0`.
+
 ## Run on LUMI with `oellm-eval`
 
 Install the OpenEuroLLM scheduler in the login-node environment and point `HF_HOME` at the shared cache:
