@@ -26,6 +26,9 @@ PREFERRED_METRICS = (
     "acc,none",
     "exact_match,none",
     "pass@1,none",
+    "f1,none",
+    "bleu,none",
+    "chrf++,none",
 )
 
 
@@ -69,6 +72,22 @@ def _task_to_benchmark(task: str) -> str:
         return "flores-200"
     if task.startswith("include_base"):
         return "include"
+    if task.startswith("xcsqa_"):
+        return "xcsqa"
+    if task.startswith("pawsx_"):
+        return "paws-x"
+    if task.startswith("xnli_"):
+        return "xnli"
+    if task.startswith("opensubtitles_multi40_"):
+        return "opensubtitles-multi40"
+    if task.startswith("arc_challenge_mt_"):
+        return "arc-challenge-mt"
+    if task.startswith(("global_piqa_completions_", "global_piqa_prompted_")):
+        return "global-piqa"
+    if task in {"copa", "social_iqa", "openbookqa", "lambada_openai", "winogrande", "mmlu", "hellaswag", "arc_easy", "commonsense_qa", "piqa", "boolq"}:
+        return "open-sci"
+    if task in {"agieval_lsat_ar", "wsc273", "bigbench_language_identification_multiple_choice", "bigbench_qa_wikidata_generate_until", "bigbench_dyck_languages_generate_until", "bigbench_operators_generate_until", "bigbench_repeat_copy_logic_generate_until", "bigbench_cs_algorithms_generate_until", "coqa", "squadv2", "jeopardy"}:
+        return "dclm-core"
     mapping = {"ifeval": "ifeval", "gsm8k": "gsm8k", "arc_challenge": "arc-challenge", "mbpp": "mbpp", "humaneval": "humaneval", "HumanEval": "humaneval", "LiveCodeBench": "livecodebench", "mmlu_college_computer_science": "mmlu-college-cs", "hendrycks_math500": "math-500", "MATH500": "math-500", "GPQADiamond": "gpqa-diamond", "AIME24": "aime24", "AIME25": "aime25", "AMC23": "amc23", "xwinograd": "xwinograd", "xcopa": "xcopa", "xstorycloze": "xstorycloze"}
     return mapping.get(task, task.replace("_", "-"))
 
@@ -80,6 +99,11 @@ def _task_language(task: str, benchmark_id: str) -> str | None:
         "mmlu-prox": ("mmlu_prox_",),
         "sib-200": ("sib200_",),
         "belebele": ("belebele_",),
+        "xcsqa": ("xcsqa_",),
+        "paws-x": ("pawsx_",),
+        "xnli": ("xnli_",),
+        "arc-challenge-mt": ("arc_challenge_mt_",),
+        "global-piqa": ("global_piqa_completions_", "global_piqa_prompted_"),
     }
     for prefix in prefixes.get(benchmark_id, ()):
         if task.startswith(prefix):
@@ -90,6 +114,8 @@ def _task_language(task: str, benchmark_id: str) -> str | None:
         return task.split(":", 1)[-1]
     if benchmark_id == "include" and task.startswith("include_base_44_"):
         return task[len("include_base_44_") :]
+    if benchmark_id == "opensubtitles-multi40":
+        return task[len("opensubtitles_multi40_") :]
     return None
 
 
@@ -109,8 +135,7 @@ def _iso_timestamp(value: Any, fallback: str) -> str:
     return fallback
 
 
-def ingest_lm_eval(input_path: Path, model_id: str, run_id: str, model_revision: str | None, source_command: str | None) -> dict[str, Any]:
-    raw = load_json(input_path)
+def _ingest_lm_eval_raw(raw: dict[str, Any], source: str, model_id: str, run_id: str, model_revision: str | None, source_command: str | None) -> dict[str, Any]:
     registry = benchmark_index()
     metrics: list[dict[str, Any]] = []
     for task, values in (raw.get("results") or {}).items():
@@ -122,13 +147,14 @@ def ingest_lm_eval(input_path: Path, model_id: str, run_id: str, model_revision:
             value = values.get(metric_name)
             if isinstance(value, (int, float)):
                 language = _task_language(task, benchmark_id)
+                normalized, scale = _normal_value(float(value), metric_name)
                 metrics.append({
                     "capability": benchmark.get("capability", "unmapped"),
                     "benchmark": benchmark_id,
                     "task": task,
                     "metric": metric_name,
-                    "value": round(float(value) * 100, 6),
-                    "scale": "percentage",
+                    "value": round(normalized, 6),
+                    "scale": scale,
                     "direction": benchmark.get("direction", "higher"),
                     "language": language,
                     "n": (raw.get("n-samples") or {}).get(task, {}).get("effective"),
@@ -152,7 +178,7 @@ def ingest_lm_eval(input_path: Path, model_id: str, run_id: str, model_revision:
         "started_at": _iso_timestamp(raw.get("date"), now),
         "finished_at": now,
         "model": {"id": model_id, "revision": model_revision, "format": "hf"},
-        "provenance": {"kind": "fresh-reproduced", "source": str(input_path), "command": source_command, "harness": "lm-evaluation-harness", "harness_version": (raw.get("versions") or {}).get("lm_eval")},
+        "provenance": {"kind": "fresh-reproduced", "source": source, "command": source_command, "harness": "lm-evaluation-harness", "harness_version": (raw.get("versions") or {}).get("lm_eval")},
         "environment": {"platform": platform.platform(), "python": platform.python_version()},
         "metrics": metrics,
     }
@@ -164,6 +190,40 @@ def ingest_lm_eval(input_path: Path, model_id: str, run_id: str, model_revision:
     if errors:
         raise ResultError("; ".join(errors))
     return run
+
+
+def ingest_lm_eval(input_path: Path, model_id: str, run_id: str, model_revision: str | None, source_command: str | None) -> dict[str, Any]:
+    return _ingest_lm_eval_raw(load_json(input_path), str(input_path), model_id, run_id, model_revision, source_command)
+
+
+def ingest_lm_eval_directory(input_dir: Path, model_id: str, run_id: str, model_revision: str | None, source_command: str | None) -> dict[str, Any]:
+    """Merge resumable grouped lm-eval outputs into one diagnostic run."""
+    if not input_dir.is_dir():
+        raise ResultError(f"lm-eval input directory does not exist: {input_dir}")
+    candidates: list[dict[str, Any]] = []
+    for path in sorted(input_dir.rglob("*.json")):
+        try:
+            value = load_json(path)
+        except ValueError:
+            continue
+        if isinstance(value.get("results"), dict):
+            candidates.append(value)
+    if not candidates:
+        raise ResultError(f"No lm-eval result JSON files found under {input_dir}")
+    merged: dict[str, Any] = {
+        "results": {},
+        "n-samples": {},
+        "versions": {},
+        "config": {"limit": next(((item.get("config") or {}).get("limit") for item in candidates if (item.get("config") or {}).get("limit") is not None), None)},
+    }
+    dates = [item.get("date") for item in candidates if item.get("date") is not None]
+    if dates:
+        merged["date"] = dates[0]
+    for item in candidates:
+        merged["results"].update(item.get("results") or {})
+        merged["n-samples"].update(item.get("n-samples") or {})
+        merged["versions"].update(item.get("versions") or {})
+    return _ingest_lm_eval_raw(merged, str(input_dir), model_id, run_id, model_revision, source_command)
 
 
 def ingest_oellm_csv(input_path: Path, model_id: str, run_id: str, model_revision: str | None, source_command: str | None, source_model: str | None = None, diagnostic: bool = False) -> dict[str, Any]:

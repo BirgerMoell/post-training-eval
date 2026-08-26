@@ -71,6 +71,24 @@ pteval ingest-oellm-csv \
 
 The dashboard displays these results with a yellow **Diagnostic** badge. Quick results are useful for triage and parent comparisons, but cannot satisfy release gates.
 
+### Run quick mode on a GPU workstation
+
+`oellm-eval` includes 438 task/language rows with several few-shot protocols and three mutually incompatible harness environments. `local-quick` keeps the official task registry but batches compatible rows so a 9B checkpoint is not reloaded hundreds of times. It is resumable, fixes batch size at one, uses the native chat template, and stops before free disk crosses the configured floor.
+
+```bash
+PYTHONPATH=/path/to/oellm-eval pteval local-quick \
+  --model /immutable/hf/snapshot \
+  --output-dir runs/model-quick \
+  --lm-python /envs/lm-eval/bin/python \
+  --include-path /path/to/oellm-eval/oellm/resources/custom_lm_eval_tasks \
+  --lighteval-bin /envs/lighteval/bin/lighteval \
+  --evalchemy-python /envs/evalchemy/bin/python \
+  --evalchemy-dir /path/to/evalchemy \
+  --limit 8 --gpu 0 --min-free-gb 20
+```
+
+Use `--suite lm-eval-harness` while validating one runtime. Repeating the same command resumes completed batches from `manifest.json`; failed or interrupted batches are rerun. Two models can run concurrently on separate GPUs by using distinct output directories and `--gpu 0` / `--gpu 1`.
+
 ## Run on LUMI with `oellm-eval`
 
 Install the OpenEuroLLM scheduler in the login-node environment and point `HF_HOME` at the shared cache:
