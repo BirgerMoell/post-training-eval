@@ -7,7 +7,7 @@ from pathlib import Path
 from post_training_eval.checkpoints import parse_checkpoint
 from post_training_eval.planner import build_plan
 from post_training_eval.registry import benchmark_index, validate_registry
-from post_training_eval.results import build_site_data, ingest_lm_eval
+from post_training_eval.results import ResultError, build_site_data, ingest_lm_eval, publish_run
 from post_training_eval.gates import compare_runs
 
 
@@ -56,6 +56,20 @@ class RegistryResultTests(unittest.TestCase):
         report = compare_runs(candidate, baseline, 2)
         self.assertEqual(report["status"], "failed")
         self.assertEqual(report["regressions"][0]["improvement"], -5)
+
+    def test_published_run_ids_are_immutable(self):
+        run = {"schema_version": 1, "run_id": "immutable-run", "status": "completed", "model": {"id": "owner/model", "revision": "abc", "format": "hf"}, "provenance": {"kind": "fresh-reproduced", "source": "test"}, "metrics": [{"capability": "instruction-chat", "benchmark": "ifeval", "metric": "prompt_level_strict_accuracy", "value": 50, "scale": "percentage"}]}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            first = root / "first.json"
+            first.write_text(json.dumps(run))
+            publish_run(first, root)
+            changed = dict(run)
+            changed["metrics"] = [{**run["metrics"][0], "value": 49}]
+            second = root / "second.json"
+            second.write_text(json.dumps(changed))
+            with self.assertRaises(ResultError):
+                publish_run(second, root)
 
 
 if __name__ == "__main__":

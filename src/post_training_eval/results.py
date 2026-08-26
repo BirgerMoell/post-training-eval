@@ -141,6 +141,8 @@ def publish_run(source: Path, root: Path | None = None) -> Path:
     destination = base / "results" / "runs" / f"{run['run_id']}.json"
     destination.parent.mkdir(parents=True, exist_ok=True)
     if source.resolve() != destination.resolve():
+        if destination.exists() and json.loads(destination.read_text()) != run:
+            raise ResultError(f"Run id {run['run_id']} already exists with different content; run records are immutable")
         shutil.copyfile(source, destination)
     return destination
 
