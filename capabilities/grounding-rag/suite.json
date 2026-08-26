@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "grounding-rag",
+  "name": "Grounding & RAG",
+  "question": "Can the model answer from supplied evidence, cite it, and say when evidence is insufficient?",
+  "gate_policy": "answer_quality_and_citation_correctness_and_abstention",
+  "benchmarks": [
+    {"id": "oellm-grounding-holdouts", "name": "OpenEuroLLM grounded-QA holdouts", "metric": "rubric_pass_rate", "direction": "higher", "runner": "openai-endpoint", "status": "operational", "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"},
+    {"id": "ragas-faithfulness", "name": "RAGAS faithfulness", "metric": "faithfulness", "direction": "higher", "runner": "external", "status": "adapter-required", "url": "https://docs.ragas.io/"},
+    {"id": "citation-correctness-eu", "name": "EU citation correctness", "metric": "citation_f1", "direction": "higher", "runner": "openai-endpoint", "status": "planned"},
+    {"id": "insufficient-evidence-eu", "name": "EU insufficient-evidence handling", "metric": "abstention_f1", "direction": "higher", "runner": "openai-endpoint", "status": "operational"}
+  ]
+}
+

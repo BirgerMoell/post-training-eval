@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openeurollm.github.io/post-training-eval/schemas/run.schema.json",
+  "title": "OpenEuroLLM post-training evaluation run",
+  "type": "object",
+  "required": ["schema_version", "run_id", "status", "model", "provenance", "metrics"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "run_id": {"type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]+$"},
+    "status": {"enum": ["completed", "partial", "failed", "imported"]},
+    "model": {
+      "type": "object",
+      "required": ["id", "revision", "format"],
+      "properties": {"id": {"type": "string"}, "revision": {"type": ["string", "null"]}, "format": {"type": "string"}}
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["kind", "source"],
+      "properties": {"kind": {"enum": ["fresh-reproduced", "imported-published", "compatibility-check"]}, "source": {"type": "string"}}
+    },
+    "metrics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["capability", "benchmark", "metric", "value", "scale"],
+        "properties": {"capability": {"type": "string"}, "benchmark": {"type": "string"}, "metric": {"type": "string"}, "value": {"type": "number"}, "scale": {"enum": ["percentage", "score", "rank", "milliseconds", "tokens_per_second", "count"]}, "language": {"type": ["string", "null"]}, "slice": {"type": ["string", "null"]}, "n": {"type": ["integer", "null"]}}
+      }
+    }
+  }
+}
+

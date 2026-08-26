@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "run_id": "published-sft-evidence",
+  "status": "imported",
+  "finished_at": "2026-08-26T00:00:00Z",
+  "model": {"id": "birgermoell/oellm-9b-256k-sft", "revision": "08359ad61333263c067edaf290067fea5b103d34", "format": "hf"},
+  "provenance": {
+    "kind": "imported-published",
+    "source": "https://huggingface.co/birgermoell/oellm-9b-256k-sft",
+    "protocol": "Values transcribed from the checkpoint card and the matched parent column of the reasoning-v1 checkpoint-selection evaluation. They are not a fresh rerun by this repository.",
+    "harness": "lm-evaluation-harness 0.4.11 for parent comparison; custom deterministic NIAH and EU holdouts for checkpoint-card diagnostics"
+  },
+  "metrics": [
+    {"capability": "reasoning-knowledge", "benchmark": "gsm8k", "metric": "exact_match_strict", "value": 30.78, "scale": "percentage", "direction": "higher", "slice": "4-shot"},
+    {"capability": "reasoning-knowledge", "benchmark": "gsm8k", "metric": "exact_match_flexible", "value": 30.93, "scale": "percentage", "direction": "higher", "slice": "4-shot"},
+    {"capability": "reasoning-knowledge", "benchmark": "arc-challenge", "metric": "accuracy_normalized", "value": 50.09, "scale": "percentage", "direction": "higher", "slice": "25-shot"},
+    {"capability": "reasoning-knowledge", "benchmark": "arc-challenge", "metric": "accuracy", "value": 44.97, "scale": "percentage", "direction": "higher", "slice": "25-shot"},
+    {"capability": "instruction-chat", "benchmark": "ifeval", "metric": "prompt_level_strict_accuracy", "value": 41.04, "scale": "percentage", "direction": "higher", "slice": "0-shot"},
+    {"capability": "instruction-chat", "benchmark": "ifeval", "metric": "instruction_level_strict_accuracy", "value": 52.64, "scale": "percentage", "direction": "higher", "slice": "0-shot"},
+    {"capability": "reasoning-knowledge", "benchmark": "mmlu-college-cs", "metric": "accuracy", "value": 51.0, "scale": "percentage", "direction": "higher", "slice": "5-shot"},
+    {"capability": "reasoning-knowledge", "benchmark": "mgsm", "metric": "exact_match_flexible", "value": 20.8, "scale": "percentage", "direction": "higher", "language": "de", "slice": "0-shot"},
+    {"capability": "reasoning-knowledge", "benchmark": "mgsm", "metric": "exact_match_flexible", "value": 24.0, "scale": "percentage", "direction": "higher", "language": "es", "slice": "0-shot"},
+    {"capability": "reasoning-knowledge", "benchmark": "mgsm", "metric": "exact_match_flexible", "value": 20.4, "scale": "percentage", "direction": "higher", "language": "fr", "slice": "0-shot"},
+    {"capability": "reasoning-knowledge", "benchmark": "math-500", "metric": "exact_match", "value": 0.4, "scale": "percentage", "direction": "higher", "slice": "0-shot"},
+    {"capability": "long-context", "benchmark": "niah-natural", "metric": "full_retrieval_rate", "value": 100.0, "scale": "percentage", "direction": "higher", "n": 40, "slice": "512-to-262K; five depths"},
+    {"capability": "long-context", "benchmark": "niah-exact-format", "metric": "exact_format_rate", "value": 100.0, "scale": "percentage", "direction": "higher", "n": 5, "slice": "512"},
+    {"capability": "long-context", "benchmark": "niah-exact-format", "metric": "exact_format_rate", "value": 40.0, "scale": "percentage", "direction": "higher", "n": 5, "slice": "32K"},
+    {"capability": "long-context", "benchmark": "niah-exact-format", "metric": "exact_format_rate", "value": 0.0, "scale": "percentage", "direction": "higher", "n": 5, "slice": "128K"},
+    {"capability": "long-context", "benchmark": "niah-exact-format", "metric": "exact_format_rate", "value": 0.0, "scale": "percentage", "direction": "higher", "n": 5, "slice": "~262K"},
+    {"capability": "instruction-chat", "benchmark": "oellm-instruction-holdouts", "metric": "instruction_following_accuracy", "value": 63.2, "scale": "percentage", "direction": "higher", "slice": "multilingual development"},
+    {"capability": "grounding-rag", "benchmark": "oellm-grounding-holdouts", "metric": "grounded_qa_accuracy", "value": 58.6, "scale": "percentage", "direction": "higher", "slice": "multilingual development"},
+    {"capability": "reasoning-knowledge", "benchmark": "oellm-reasoning-holdouts", "metric": "reasoning_math_accuracy", "value": 5.9, "scale": "percentage", "direction": "higher", "slice": "multilingual development"}
+  ],
+  "limitations": ["No completed safety evaluation is claimed.", "NIAH measures single-needle retrieval, not 256K reasoning or synthesis.", "The multilingual holdout is a development diagnostic, not an external benchmark."]
+}

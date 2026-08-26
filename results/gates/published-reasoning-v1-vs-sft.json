@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "candidate_run": "published-reasoning-v1-evidence",
+  "baseline_run": "published-sft-evidence",
+  "max_regression_points": 2.0,
+  "status": "failed",
+  "comparison_count": 10,
+  "regressions": [
+    {"key": ["instruction-chat", "ifeval", "prompt_level_strict_accuracy", null, "0-shot"], "baseline": 41.04, "candidate": 26.62, "improvement": -14.42, "direction": "higher", "passed": false},
+    {"key": ["instruction-chat", "ifeval", "instruction_level_strict_accuracy", null, "0-shot"], "baseline": 52.64, "candidate": 39.21, "improvement": -13.43, "direction": "higher", "passed": false},
+    {"key": ["reasoning-knowledge", "mmlu-college-cs", "accuracy", null, "5-shot"], "baseline": 51.0, "candidate": 48.0, "improvement": -3.0, "direction": "higher", "passed": false}
+  ],
+  "targets_missed": [
+    {"key": ["instruction-chat", "ifeval", "prompt_level_strict_accuracy", null, "0-shot"], "value": 26.62, "target": 75, "direction": "higher"}
+  ],
+  "comparisons": [
+    {"key": ["reasoning-knowledge", "gsm8k", "exact_match_strict", null, "4-shot"], "baseline": 30.78, "candidate": 29.34, "improvement": -1.44, "direction": "higher", "passed": true},
+    {"key": ["reasoning-knowledge", "gsm8k", "exact_match_flexible", null, "4-shot"], "baseline": 30.93, "candidate": 29.57, "improvement": -1.36, "direction": "higher", "passed": true},
+    {"key": ["reasoning-knowledge", "arc-challenge", "accuracy_normalized", null, "25-shot"], "baseline": 50.09, "candidate": 51.88, "improvement": 1.79, "direction": "higher", "passed": true},
+    {"key": ["reasoning-knowledge", "arc-challenge", "accuracy", null, "25-shot"], "baseline": 44.97, "candidate": 46.76, "improvement": 1.79, "direction": "higher", "passed": true},
+    {"key": ["instruction-chat", "ifeval", "prompt_level_strict_accuracy", null, "0-shot"], "baseline": 41.04, "candidate": 26.62, "improvement": -14.42, "direction": "higher", "passed": false},
+    {"key": ["instruction-chat", "ifeval", "instruction_level_strict_accuracy", null, "0-shot"], "baseline": 52.64, "candidate": 39.21, "improvement": -13.43, "direction": "higher", "passed": false},
+    {"key": ["reasoning-knowledge", "mmlu-college-cs", "accuracy", null, "5-shot"], "baseline": 51.0, "candidate": 48.0, "improvement": -3.0, "direction": "higher", "passed": false},
+    {"key": ["reasoning-knowledge", "mgsm", "exact_match_flexible", "de", "0-shot"], "baseline": 20.8, "candidate": 29.6, "improvement": 8.8, "direction": "higher", "passed": true},
+    {"key": ["reasoning-knowledge", "mgsm", "exact_match_flexible", "es", "0-shot"], "baseline": 24.0, "candidate": 27.6, "improvement": 3.6, "direction": "higher", "passed": true},
+    {"key": ["reasoning-knowledge", "mgsm", "exact_match_flexible", "fr", "0-shot"], "baseline": 20.4, "candidate": 24.4, "improvement": 4.0, "direction": "higher", "passed": true}
+  ],
+  "note": "Imported published evidence; the gate is only as strong as the matched checkpoint-card protocol."
+}
+

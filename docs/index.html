@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OpenEuroLLM post-training evaluation evidence and capability coverage">
+  <title>OpenEuroLLM · Post-training evaluation</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="hero">
+    <nav><a class="wordmark" href="./">OPENEUROLLM / EVAL</a><a href="https://github.com/BirgerMoell/post-training-eval">Repository ↗</a></nav>
+    <div class="hero-grid">
+      <div>
+        <p class="eyebrow">POST-TRAINING CONTROL PLANE</p>
+        <h1>Evidence before<br><span>model claims.</span></h1>
+      </div>
+      <p class="intro">Checkpoint-level results across nine capabilities, with immutable revisions, protocol provenance, language slices, and visible gaps. Imported evidence and fresh reproductions are never conflated.</p>
+    </div>
+  </header>
+
+  <main>
+    <section id="summary" class="summary" aria-label="Evaluation summary"></section>
+    <section id="gate-summary" class="gate-summary" aria-label="Latest comparison gate"></section>
+
+    <section class="panel coverage-section">
+      <div class="section-heading"><div><p class="eyebrow">COVERAGE</p><h2>What has actually been tested?</h2></div><p>Dots show at least one published metric, not that a release gate has passed.</p></div>
+      <div id="coverage" class="coverage" role="table" aria-label="Model capability coverage"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading"><div><p class="eyebrow">EVIDENCE LEDGER</p><h2>Scores and provenance</h2></div><p id="result-count" aria-live="polite"></p></div>
+      <div class="filters">
+        <label>Model<select id="model-filter"><option value="">All models</option></select></label>
+        <label>Capability<select id="capability-filter"><option value="">All capabilities</option></select></label>
+        <label>Evidence<select id="evidence-filter"><option value="">All evidence</option></select></label>
+        <label class="search">Search<input id="search-filter" type="search" placeholder="benchmark, metric, language…"></label>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Model</th><th>Capability / benchmark</th><th>Slice</th><th>Score</th><th>Target</th><th>Evidence</th></tr></thead>
+          <tbody id="results"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel capability-section">
+      <div class="section-heading"><div><p class="eyebrow">PLAYBOOK</p><h2>Nine capability contracts</h2></div><p>Operational status refers to runner availability—not model quality.</p></div>
+      <div id="capabilities" class="capability-grid"></div>
+    </section>
+  </main>
+
+  <footer><p>Generated from versioned JSON in the repository. <span id="generated"></span></p></footer>
+  <script src="app.js" defer></script>
+</body>
+</html>

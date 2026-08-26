@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "release",
+  "description": "Full release evaluation. External/judge/submission tasks remain visible and block release until evidence is ingested.",
+  "steps": [
+    {"id": "checkpoint", "capability": "efficiency-release", "driver": "inspect", "required": true},
+    {"id": "oellm-multilingual", "capability": "multilingual", "driver": "oellm-eval", "task_groups": ["oellm-multilingual", "mmlu-prox-eu", "sib200-eu", "global-mgsm-eu", "polymath-eu-low", "polymath-eu-medium", "polymath-eu-high", "polymath-eu-top"], "required": true},
+    {"id": "reasoning-instruction-retention", "capability": "reasoning-knowledge", "driver": "lm-eval", "tasks": ["gsm8k", "ifeval", "arc_challenge", "mmlu_college_computer_science", "mbpp"], "apply_chat_template": true, "batch_size": 1, "required": true},
+    {"id": "reasoning-coding-extended", "capability": "coding", "driver": "external", "benchmarks": ["livecodebench", "humaneval", "gpqa-diamond", "math-500", "aime24", "aime25", "amc23"], "required": true, "notes": "Use the Evalchemy tasks from the official oellm-eval reasoning group with the release protocol pinned."},
+    {"id": "long-context-release", "capability": "long-context", "driver": "builtin-niah", "lengths": [4096, 32768, 131072, 262000], "depths": [0, 25, 50, 75, 100], "required": true},
+    {"id": "rag-tools", "capability": "grounding-rag", "driver": "openai-endpoint", "suite": "oellm-eu-eval-holdouts-v1", "required": true},
+    {"id": "safety-release", "capability": "safety", "driver": "external", "benchmarks": ["harmbench", "xstest", "strongreject", "multiturn-red-team"], "required": true},
+    {"id": "arena", "capability": "instruction-chat", "driver": "external", "benchmarks": ["arena-hard-eu", "lmarena-rank"], "required": true},
+    {"id": "agentic", "capability": "tools-agents", "driver": "external", "benchmarks": ["bfcl", "tau2-bench", "browsecomp"], "required": true},
+    {"id": "efficiency", "capability": "efficiency-release", "driver": "external", "benchmarks": ["throughput", "time-to-first-token", "quantization-retention", "release-completeness"], "required": true}
+  ]
+}

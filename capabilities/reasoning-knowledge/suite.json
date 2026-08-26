@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "reasoning-knowledge",
+  "name": "Reasoning & Knowledge",
+  "question": "Can the model solve math, scientific, factual, and domain questions while retaining knowledge?",
+  "gate_policy": "candidate_improves_parent_without_retention_regression",
+  "benchmarks": [
+    {"id": "gsm8k", "name": "GSM8K", "metric": "exact_match", "direction": "higher", "runner": "oellm-eval", "group": "reasoning", "status": "operational"},
+    {"id": "arc-challenge", "name": "ARC-Challenge", "metric": "accuracy_normalized", "direction": "higher", "runner": "oellm-eval", "group": "reasoning", "status": "operational"},
+    {"id": "mgsm", "name": "MGSM EU", "metric": "flexible_exact_match", "direction": "higher", "target": 78, "stretch": 92, "runner": "oellm-eval", "group": "mgsm-eu", "status": "operational"},
+    {"id": "polymath", "name": "PolyMath EU", "metric": "exact_match", "direction": "higher", "target": 55, "stretch": 72, "runner": "oellm-eval", "group": "polymath-eu-low,polymath-eu-medium,polymath-eu-high,polymath-eu-top", "status": "operational"},
+    {"id": "mmlu-college-cs", "name": "MMLU college computer science", "metric": "accuracy", "direction": "higher", "runner": "lm-eval", "status": "operational"},
+    {"id": "math-500", "name": "MATH-500", "metric": "exact_match", "direction": "higher", "runner": "oellm-eval", "group": "reasoning", "status": "operational"},
+    {"id": "gpqa-diamond", "name": "GPQA Diamond", "metric": "accuracy", "direction": "higher", "runner": "oellm-eval", "group": "reasoning", "status": "license-gated"},
+    {"id": "oellm-reasoning-holdouts", "name": "OpenEuroLLM reasoning holdouts", "metric": "reasoning_math_accuracy", "direction": "higher", "runner": "openai-endpoint", "status": "operational", "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"}
+  ]
+}

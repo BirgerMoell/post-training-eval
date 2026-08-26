@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "core",
+  "description": "Per-checkpoint development suite: core multilingual, instruction, reasoning, coding, and long-context regression gates.",
+  "steps": [
+    {"id": "checkpoint", "capability": "efficiency-release", "driver": "inspect", "required": true},
+    {"id": "multilingual-core", "capability": "multilingual", "driver": "oellm-eval", "task_groups": ["sib200-eu", "belebele-eu-cf", "global-mmlu-eu", "mmlu-prox-eu", "global-mgsm-eu"], "required": true},
+    {"id": "reasoning-instruction-retention", "capability": "reasoning-knowledge", "driver": "lm-eval", "tasks": ["gsm8k", "ifeval", "arc_challenge", "mmlu_college_computer_science", "mbpp"], "apply_chat_template": true, "batch_size": 1, "required": true},
+    {"id": "polymath-core", "capability": "reasoning-knowledge", "driver": "oellm-eval", "task_groups": ["polymath-eu-low", "polymath-eu-medium"], "required": true},
+    {"id": "niah-core", "capability": "long-context", "driver": "builtin-niah", "lengths": [4096, 32768, 131072], "depths": [0, 25, 50, 75, 100], "required": true},
+    {"id": "grounding-tools-holdouts", "capability": "grounding-rag", "driver": "openai-endpoint", "suite": "oellm-eu-eval-holdouts-v1", "required": true},
+    {"id": "safety-core", "capability": "safety", "driver": "external", "benchmarks": ["harmbench", "xstest", "strongreject"], "required": true}
+  ]
+}

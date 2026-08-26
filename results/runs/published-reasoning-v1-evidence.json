@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "run_id": "published-reasoning-v1-evidence",
+  "status": "imported",
+  "finished_at": "2026-08-26T00:00:00Z",
+  "model": {"id": "birgermoell/oellm-9b-256k-reasoning-v1", "revision": "e74926a1a82aab4da307b9526bd5fe4fa5d15c20", "format": "hf"},
+  "provenance": {
+    "kind": "imported-published",
+    "source": "https://huggingface.co/birgermoell/oellm-9b-256k-reasoning-v1",
+    "protocol": "Step-2000 values transcribed from the checkpoint card's parent-vs-release table. Same prompts and greedy decoding as the parent; seed 20260821.",
+    "harness": "lm-evaluation-harness 0.4.11; Transformers 5.2.0; BF16; batch size 1"
+  },
+  "metrics": [
+    {"capability": "reasoning-knowledge", "benchmark": "gsm8k", "metric": "exact_match_strict", "value": 29.34, "scale": "percentage", "direction": "higher", "slice": "4-shot"},
+    {"capability": "reasoning-knowledge", "benchmark": "gsm8k", "metric": "exact_match_flexible", "value": 29.57, "scale": "percentage", "direction": "higher", "slice": "4-shot"},
+    {"capability": "reasoning-knowledge", "benchmark": "arc-challenge", "metric": "accuracy_normalized", "value": 51.88, "scale": "percentage", "direction": "higher", "slice": "25-shot"},
+    {"capability": "reasoning-knowledge", "benchmark": "arc-challenge", "metric": "accuracy", "value": 46.76, "scale": "percentage", "direction": "higher", "slice": "25-shot"},
+    {"capability": "instruction-chat", "benchmark": "ifeval", "metric": "prompt_level_strict_accuracy", "value": 26.62, "scale": "percentage", "direction": "higher", "slice": "0-shot"},
+    {"capability": "instruction-chat", "benchmark": "ifeval", "metric": "instruction_level_strict_accuracy", "value": 39.21, "scale": "percentage", "direction": "higher", "slice": "0-shot"},
+    {"capability": "reasoning-knowledge", "benchmark": "mmlu-college-cs", "metric": "accuracy", "value": 48.0, "scale": "percentage", "direction": "higher", "slice": "5-shot"},
+    {"capability": "reasoning-knowledge", "benchmark": "mgsm", "metric": "exact_match_flexible", "value": 29.6, "scale": "percentage", "direction": "higher", "language": "de", "slice": "0-shot"},
+    {"capability": "reasoning-knowledge", "benchmark": "mgsm", "metric": "exact_match_flexible", "value": 27.6, "scale": "percentage", "direction": "higher", "language": "es", "slice": "0-shot"},
+    {"capability": "reasoning-knowledge", "benchmark": "mgsm", "metric": "exact_match_flexible", "value": 24.4, "scale": "percentage", "direction": "higher", "language": "fr", "slice": "0-shot"}
+  ],
+  "limitations": ["This checkpoint is explicitly not an accepted production upgrade.", "It was not re-evaluated for long context, safety, factuality, calibration, or broad multilingual instruction following.", "Greedy decoding showed repetition loops in two of five published diagnostic prompts."]
+}
+

@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "smoke",
+  "description": "Fast stack and checkpoint validation. Scores are diagnostic and must not be used as release claims.",
+  "steps": [
+    {"id": "checkpoint", "capability": "efficiency-release", "driver": "inspect", "required": true},
+    {"id": "reasoning-instruction-smoke", "capability": "reasoning-knowledge", "driver": "lm-eval", "tasks": ["arc_challenge", "ifeval"], "apply_chat_template": true, "batch_size": 1, "limit": 16, "required": true},
+    {"id": "multilingual-smoke", "capability": "multilingual", "driver": "oellm-eval", "task_groups": ["sib200-eu[swe_Latn|deu_Latn|fra_Latn]"], "limit": 16, "required": true},
+    {"id": "niah-4k-smoke", "capability": "long-context", "driver": "builtin-niah", "lengths": [4096], "depths": [0, 50, 100], "required": true},
+    {"id": "safety-smoke", "capability": "safety", "driver": "external", "benchmarks": ["xstest"], "required": false, "notes": "Install the XSTest/HarmBench adapter before making a safety claim."}
+  ]
+}

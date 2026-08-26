@@ -1,0 +1,10 @@
+{
+  "checkpoint": "megatron:///scratch/project/checkpoints/model",
+  "output": "/scratch/project/converted/model-hf",
+  "tokenizer": "openeurollm/oellm-9b-256k-theta64m-prelude",
+  "converter": {
+    "name": "site-specific Megatron Bridge converter",
+    "command": ["python3", "/path/to/convert_megatron_to_hf.py", "--load", "{source}", "--save", "{output}", "--tokenizer", "{tokenizer}"]
+  }
+}
+

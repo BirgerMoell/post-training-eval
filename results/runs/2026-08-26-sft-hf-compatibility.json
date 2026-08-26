@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-08-26-sft-hf-compatibility",
+  "status": "completed",
+  "finished_at": "2026-08-26T07:33:07Z",
+  "model": {"id": "birgermoell/oellm-9b-256k-sft", "revision": "08359ad61333263c067edaf290067fea5b103d34", "format": "hf_hub"},
+  "provenance": {
+    "kind": "compatibility-check",
+    "source": "https://huggingface.co/birgermoell/oellm-9b-256k-sft/tree/08359ad61333263c067edaf290067fea5b103d34",
+    "command": "pteval inspect --model hf://birgermoell/oellm-9b-256k-sft",
+    "protocol": "Live Hugging Face API and config.json inspection by repository CLI. This is not a capability evaluation."
+  },
+  "metrics": [
+    {"capability": "efficiency-release", "benchmark": "checkpoint-compatibility", "metric": "checks_pass_rate", "value": 100, "scale": "percentage", "direction": "higher", "n": 5, "slice": "config, tokenizer, generation config, safetensors index, weights"}
+  ],
+  "checkpoint": {"architecture": "Qwen3ForCausalLM", "parameters": 9101947904, "weight_shards": 4, "max_position_embeddings": 262144, "rope_theta": 64000000, "license": "apache-2.0"}
+}
+
