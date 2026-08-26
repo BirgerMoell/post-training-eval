@@ -24,6 +24,15 @@ slurm/lumi_lm_eval.sbatch
 
 The job uses one MI250X GCD, BF16, batch size 1, native chat template, greedy harness defaults, logged samples, and offline Hugging Face caches. The limited score is only a diagnostic. Use the full `core` profile for a comparison or gate.
 
+When comparing exactly one parent and candidate, `slurm/lumi_compare_smoke.sbatch` runs them sequentially in one allocation. This reduces queue submissions and guarantees the same container and environment:
+
+```bash
+SFT_MODEL=/scratch/.../oellm-9b-256k-sft \
+REASONING_MODEL=/scratch/.../oellm-9b-256k-reasoning-v1 \
+TASKS=arc_challenge,ifeval LIMIT=16 \
+sbatch --export=ALL slurm/lumi_compare_smoke.sbatch
+```
+
 ## Air-gapped execution
 
 Run `oellm-eval ... --download_only true` on the login node before scheduling a profile whose datasets are not already in the shared cache. Compute nodes use `HF_HUB_OFFLINE=1`; a cache miss should fail rather than fetch mutable data during evaluation.
@@ -31,4 +40,3 @@ Run `oellm-eval ... --download_only true` on the login node before scheduling a 
 ## Raw result retention
 
 Keep raw results outside git until reviewed. Normalize the selected `results_*.json` with `pteval ingest-lm-eval`, inspect the generated run JSON, and publish only the normalized record. Unsafe generations, personal information, and licensed/gated benchmark examples must not be committed.
-
