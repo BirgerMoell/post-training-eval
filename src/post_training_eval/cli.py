@@ -9,7 +9,7 @@ from pathlib import Path
 from .checkpoints import CheckpointError, inspect_checkpoint, parse_checkpoint, prepare_megatron
 from .planner import build_plan, write_plan
 from .registry import repository_root, validate_registry
-from .results import ResultError, git_publish, ingest_lm_eval, publish_run, validate_result, write_site_data
+from .results import ResultError, git_publish, ingest_lm_eval, ingest_oellm_csv, publish_run, validate_result, write_site_data
 from .holdouts import run_endpoint
 from .gates import compare_runs
 from .registry import load_json
@@ -59,6 +59,14 @@ def build_parser() -> argparse.ArgumentParser:
     ingest_p.add_argument("--run-id", required=True)
     ingest_p.add_argument("--source-command")
     ingest_p.add_argument("--output", required=True)
+    collect_p = sub.add_parser("ingest-oellm-csv", help="Normalize the unified CSV produced by oellm-eval collect")
+    collect_p.add_argument("--input", required=True)
+    collect_p.add_argument("--model-id", required=True)
+    collect_p.add_argument("--model-revision")
+    collect_p.add_argument("--source-model", help="Exact model_name to select when the CSV contains multiple models")
+    collect_p.add_argument("--run-id", required=True)
+    collect_p.add_argument("--source-command")
+    collect_p.add_argument("--output", required=True)
     publish_p = sub.add_parser("publish", help="Validate a run, add it to the registry, rebuild Pages data, optionally push")
     publish_p.add_argument("--run", required=True)
     publish_p.add_argument("--push", action="store_true")
@@ -103,6 +111,9 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps({key: report[key] for key in ("model", "suite", "n", "overall_accuracy")}, indent=2))
         elif args.command == "ingest-lm-eval":
             run = ingest_lm_eval(Path(args.input), args.model_id, args.run_id, args.model_revision, args.source_command)
+            _write(run, args.output)
+        elif args.command == "ingest-oellm-csv":
+            run = ingest_oellm_csv(Path(args.input), args.model_id, args.run_id, args.model_revision, args.source_command, args.source_model)
             _write(run, args.output)
         elif args.command == "publish":
             root = repository_root()

@@ -7,7 +7,7 @@ from pathlib import Path
 from post_training_eval.checkpoints import parse_checkpoint
 from post_training_eval.planner import build_plan
 from post_training_eval.registry import benchmark_index, validate_registry
-from post_training_eval.results import ResultError, build_site_data, ingest_lm_eval, publish_run
+from post_training_eval.results import ResultError, build_site_data, ingest_lm_eval, ingest_oellm_csv, publish_run
 from post_training_eval.gates import compare_runs
 
 
@@ -44,6 +44,16 @@ class RegistryResultTests(unittest.TestCase):
             run = ingest_lm_eval(path, "owner/model", "sib-run", "abc", "lm_eval ...")
         self.assertEqual(run["metrics"][0]["benchmark"], "sib-200")
         self.assertEqual(run["metrics"][0]["language"], "swe_Latn")
+
+    def test_oellm_collector_csv_ingestion(self):
+        content = "model_name,task,n_shot,performance,metric_name\n/path/model,flores200:swe_Latn-eng_Latn,0,42.5,chrf++\n/path/model,global_mgsm_de,0,0.296,exact_match\n"
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "collected.csv"
+            path.write_text(content)
+            run = ingest_oellm_csv(path, "owner/model", "mixed-run", "abc", "oellm-eval collect")
+        self.assertEqual(run["metrics"][0]["scale"], "score")
+        self.assertEqual(run["metrics"][1]["value"], 29.6)
+        self.assertEqual(run["metrics"][1]["language"], "de")
 
     def test_site_has_models(self):
         data = build_site_data()

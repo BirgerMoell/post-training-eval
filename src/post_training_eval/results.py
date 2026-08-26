@@ -4,6 +4,7 @@ import json
 import platform
 import shutil
 import subprocess
+import csv
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -86,7 +87,16 @@ def _task_language(task: str, benchmark_id: str) -> str | None:
         return task.split("_")[1]
     if benchmark_id == "flores-200":
         return task.split(":", 1)[-1]
+    if benchmark_id == "include" and task.startswith("include_base_44_"):
+        return task[len("include_base_44_") :]
     return None
+
+
+def _normal_value(value: float, metric_name: str) -> tuple[float, str]:
+    metric_lower = metric_name.lower()
+    if "chrf" in metric_lower or "bleu" in metric_lower:
+        return value, "score"
+    return (value * 100 if -1 <= value <= 1 else value), "percentage"
 
 
 def ingest_lm_eval(input_path: Path, model_id: str, run_id: str, model_revision: str | None, source_command: str | None) -> dict[str, Any]:
@@ -123,6 +133,60 @@ def ingest_lm_eval(input_path: Path, model_id: str, run_id: str, model_revision:
         "finished_at": now,
         "model": {"id": model_id, "revision": model_revision, "format": "hf"},
         "provenance": {"kind": "fresh-reproduced", "source": str(input_path), "command": source_command, "harness": "lm-evaluation-harness", "harness_version": (raw.get("versions") or {}).get("lm_eval")},
+        "environment": {"platform": platform.platform(), "python": platform.python_version()},
+        "metrics": metrics,
+    }
+    errors = validate_result(run)
+    if errors:
+        raise ResultError("; ".join(errors))
+    return run
+
+
+def ingest_oellm_csv(input_path: Path, model_id: str, run_id: str, model_revision: str | None, source_command: str | None, source_model: str | None = None) -> dict[str, Any]:
+    with input_path.open(newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    required = {"model_name", "task", "n_shot", "performance", "metric_name"}
+    if not rows or not required.issubset(rows[0]):
+        raise ResultError(f"oellm-eval CSV must contain {', '.join(sorted(required))}")
+    source_models = sorted({row["model_name"] for row in rows})
+    if source_model:
+        rows = [row for row in rows if row["model_name"] == source_model]
+        if not rows:
+            raise ResultError(f"No rows match --source-model {source_model!r}")
+    elif len(source_models) > 1:
+        raise ResultError(f"CSV contains multiple source models; choose one with --source-model: {', '.join(source_models)}")
+    registry = benchmark_index()
+    metrics = []
+    for row in rows:
+        benchmark_id = _task_to_benchmark(row["task"])
+        benchmark = registry.get(benchmark_id)
+        if benchmark is None:
+            raise ResultError(f"No registered benchmark mapping for oellm-eval task {row['task']!r}")
+        try:
+            value, scale = _normal_value(float(row["performance"]), row["metric_name"])
+        except ValueError as exc:
+            raise ResultError(f"Non-numeric performance for {row['task']!r}: {row['performance']!r}") from exc
+        shot = row.get("n_shot")
+        slice_name = f"{shot}-shot" if shot not in (None, "", "unknown") else None
+        metrics.append({
+            "capability": benchmark["capability"],
+            "benchmark": benchmark_id,
+            "task": row["task"],
+            "metric": row["metric_name"],
+            "value": round(value, 6),
+            "scale": scale,
+            "direction": benchmark.get("direction", "higher"),
+            "language": _task_language(row["task"], benchmark_id),
+            "slice": slice_name,
+        })
+    now = datetime.now(timezone.utc).isoformat()
+    run = {
+        "schema_version": 1,
+        "run_id": run_id,
+        "status": "completed",
+        "finished_at": now,
+        "model": {"id": model_id, "revision": model_revision, "format": "hf"},
+        "provenance": {"kind": "fresh-reproduced", "source": str(input_path), "command": source_command, "harness": "OpenEuroLLM/oellm-eval collect"},
         "environment": {"platform": platform.platform(), "python": platform.python_version()},
         "metrics": metrics,
     }

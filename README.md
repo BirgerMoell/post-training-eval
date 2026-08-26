@@ -96,6 +96,19 @@ pteval ingest-lm-eval \
 pteval publish --run runs/2026-08-26-sft-core.json
 ```
 
+For a mixed `oellm-eval` run (lm-eval, lighteval, and Evalchemy), collect first and ingest the unified CSV:
+
+```bash
+oellm-eval collect --results_dir oellm-output/RUN --output_csv runs/collected.csv
+pteval ingest-oellm-csv \
+  --input runs/collected.csv \
+  --source-model /immutable/checkpoint/path \
+  --model-id owner/model \
+  --model-revision COMMIT_SHA \
+  --run-id 2026-08-26-model-core \
+  --output runs/2026-08-26-model-core.json
+```
+
 `publish` validates the run, copies it to `results/runs/`, and rebuilds `docs/data/index.json`. Use `--push` in a clean authenticated clone to commit and push the result; the Pages workflow then deploys the updated dashboard.
 
 Compare protocol-matched runs and fail the development gate when a common slice regresses by more than two points:
