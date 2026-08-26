@@ -1,6 +1,19 @@
 {
   "schema_version": 1,
   "generated_at": "2026-08-26T08:17:12.507362+00:00",
+  "score_method": {
+    "name": "Capability evidence index",
+    "range": "0–100",
+    "description": "Percentage quality metrics only. Lower-is-better percentages are inverted. Measurements are averaged by benchmark, then capability, then equally across capabilities with evidence.",
+    "exclusions": [
+      "Missing capabilities",
+      "Compatibility checks",
+      "Ranks",
+      "Latency",
+      "Throughput",
+      "Unscaled benchmark scores"
+    ]
+  },
   "capabilities": [
     {
       "schema_version": 1,
@@ -714,7 +727,544 @@
         "instruction-chat",
         "reasoning-knowledge"
       ],
-      "metric_count": 13
+      "metric_count": 13,
+      "aggregate_score": 35.7,
+      "scored_capability_count": 2,
+      "total_capability_count": 9,
+      "scored_benchmark_count": 5,
+      "targets_met": 1,
+      "targets_measured": 3,
+      "target_benchmark_count": 24,
+      "target_status": "missed",
+      "capability_scores": [
+        {
+          "id": "coding",
+          "name": "Coding",
+          "score": null,
+          "benchmark_count": 0,
+          "measurement_count": 0,
+          "diagnostic_only": false,
+          "targets_met": 0,
+          "targets_measured": 0,
+          "target_benchmark_count": 1,
+          "target_status": "not-measured",
+          "benchmarks": [
+            {
+              "id": "livecodebench",
+              "name": "LiveCodeBench",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 55,
+              "target_metric": "pass_at_1",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            }
+          ]
+        },
+        {
+          "id": "efficiency-release",
+          "name": "Efficiency & Release",
+          "score": null,
+          "benchmark_count": 0,
+          "measurement_count": 0,
+          "diagnostic_only": false,
+          "targets_met": 1,
+          "targets_measured": 1,
+          "target_benchmark_count": 3,
+          "target_status": "partial",
+          "benchmarks": [
+            {
+              "id": "checkpoint-compatibility",
+              "name": "Checkpoint compatibility",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [
+                "2026-08-26-reasoning-v1-hf-compatibility"
+              ],
+              "evidence_kinds": [
+                "compatibility-check"
+              ],
+              "diagnostic_only": false,
+              "target": 100,
+              "target_metric": "checks_pass_rate",
+              "target_direction": "higher",
+              "target_value": 100.0,
+              "target_status": "met"
+            },
+            {
+              "id": "quantization-retention",
+              "name": "Quantization retention",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 1,
+              "target_metric": "macro_score_loss_points",
+              "target_direction": "lower",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "release-completeness",
+              "name": "Release artifact completeness",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 100,
+              "target_metric": "checks_pass_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            }
+          ]
+        },
+        {
+          "id": "grounding-rag",
+          "name": "Grounding & RAG",
+          "score": null,
+          "benchmark_count": 0,
+          "measurement_count": 0,
+          "diagnostic_only": false,
+          "targets_met": 0,
+          "targets_measured": 0,
+          "target_benchmark_count": 0,
+          "target_status": "not-set",
+          "benchmarks": []
+        },
+        {
+          "id": "instruction-chat",
+          "name": "Instruction & Chat",
+          "score": 32.9,
+          "benchmark_count": 1,
+          "measurement_count": 2,
+          "diagnostic_only": false,
+          "targets_met": 0,
+          "targets_measured": 1,
+          "target_benchmark_count": 5,
+          "target_status": "missed",
+          "benchmarks": [
+            {
+              "id": "arena-hard-eu",
+              "name": "ArenaHard-EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 50,
+              "target_metric": "win_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "ifbench",
+              "name": "IFBench",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 60,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "ifeval",
+              "name": "IFEval",
+              "score": 32.9,
+              "measurement_count": 2,
+              "evidence_runs": [
+                "published-reasoning-v1-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "prompt_level_strict_accuracy",
+              "target_direction": "higher",
+              "target_value": 26.6,
+              "target_status": "missed"
+            },
+            {
+              "id": "lmarena-rank",
+              "name": "LMArena rank",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 200,
+              "target_metric": "rank",
+              "target_direction": "lower",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "maxife",
+              "name": "MultiChallenge/MAXIFE",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 80,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            }
+          ]
+        },
+        {
+          "id": "long-context",
+          "name": "Long Context",
+          "score": null,
+          "benchmark_count": 0,
+          "measurement_count": 0,
+          "diagnostic_only": false,
+          "targets_met": 0,
+          "targets_measured": 0,
+          "target_benchmark_count": 4,
+          "target_status": "not-measured",
+          "benchmarks": [
+            {
+              "id": "longbench",
+              "name": "LongBench",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 50,
+              "target_metric": "aggregate_score",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "mrcr-128k",
+              "name": "MRCR 128K",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 35,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "niah-natural",
+              "name": "Deterministic natural-word NIAH",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 95,
+              "target_metric": "full_retrieval_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "ruler",
+              "name": "RULER",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 95,
+              "target_metric": "aggregate_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            }
+          ]
+        },
+        {
+          "id": "multilingual",
+          "name": "Multilingual",
+          "score": null,
+          "benchmark_count": 0,
+          "measurement_count": 0,
+          "diagnostic_only": false,
+          "targets_met": 0,
+          "targets_measured": 0,
+          "target_benchmark_count": 4,
+          "target_status": "not-measured",
+          "benchmarks": [
+            {
+              "id": "eu-language-fidelity",
+              "name": "EU language fidelity",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 98,
+              "target_metric": "correct_language_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "global-mmlu",
+              "name": "Global MMLU EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 70,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "include",
+              "name": "INCLUDE",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 74,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "mmlu-prox",
+              "name": "MMLU-ProX EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 50,
+              "target_metric": "exact_match",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            }
+          ]
+        },
+        {
+          "id": "reasoning-knowledge",
+          "name": "Reasoning & Knowledge",
+          "score": 38.5,
+          "benchmark_count": 4,
+          "measurement_count": 8,
+          "diagnostic_only": false,
+          "targets_met": 0,
+          "targets_measured": 1,
+          "target_benchmark_count": 2,
+          "target_status": "missed",
+          "benchmarks": [
+            {
+              "id": "arc-challenge",
+              "name": "ARC-Challenge",
+              "score": 49.3,
+              "measurement_count": 2,
+              "evidence_runs": [
+                "published-reasoning-v1-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": null,
+              "target_metric": "accuracy_normalized",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-set"
+            },
+            {
+              "id": "gsm8k",
+              "name": "GSM8K",
+              "score": 29.5,
+              "measurement_count": 2,
+              "evidence_runs": [
+                "published-reasoning-v1-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": null,
+              "target_metric": "exact_match",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-set"
+            },
+            {
+              "id": "mgsm",
+              "name": "MGSM EU",
+              "score": 27.2,
+              "measurement_count": 3,
+              "evidence_runs": [
+                "published-reasoning-v1-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": 78,
+              "target_metric": "flexible_exact_match",
+              "target_direction": "higher",
+              "target_value": 27.2,
+              "target_status": "missed"
+            },
+            {
+              "id": "mmlu-college-cs",
+              "name": "MMLU college computer science",
+              "score": 48.0,
+              "measurement_count": 1,
+              "evidence_runs": [
+                "published-reasoning-v1-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": null,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-set"
+            },
+            {
+              "id": "polymath",
+              "name": "PolyMath EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 55,
+              "target_metric": "exact_match",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            }
+          ]
+        },
+        {
+          "id": "safety",
+          "name": "Safety",
+          "score": null,
+          "benchmark_count": 0,
+          "measurement_count": 0,
+          "diagnostic_only": false,
+          "targets_met": 0,
+          "targets_measured": 0,
+          "target_benchmark_count": 2,
+          "target_status": "not-measured",
+          "benchmarks": [
+            {
+              "id": "harmbench",
+              "name": "HarmBench",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 5,
+              "target_metric": "attack_success_rate",
+              "target_direction": "lower",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "xstest",
+              "name": "XSTest",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 10,
+              "target_metric": "safe_prompt_refusal_rate",
+              "target_direction": "lower",
+              "target_value": null,
+              "target_status": "not-measured"
+            }
+          ]
+        },
+        {
+          "id": "tools-agents",
+          "name": "Tools & Agents",
+          "score": null,
+          "benchmark_count": 0,
+          "measurement_count": 0,
+          "diagnostic_only": false,
+          "targets_met": 0,
+          "targets_measured": 0,
+          "target_benchmark_count": 3,
+          "target_status": "not-measured",
+          "benchmarks": [
+            {
+              "id": "bfcl",
+              "name": "Berkeley Function Calling Leaderboard",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 60,
+              "target_metric": "overall_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "browsecomp",
+              "name": "BrowseComp",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 25,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "tau2-bench",
+              "name": "tau2-bench",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 65,
+              "target_metric": "pass_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "birgermoell/oellm-9b-256k-sft",
@@ -733,7 +1283,639 @@
         "long-context",
         "reasoning-knowledge"
       ],
-      "metric_count": 22
+      "metric_count": 22,
+      "aggregate_score": 51.8,
+      "scored_capability_count": 4,
+      "total_capability_count": 9,
+      "scored_benchmark_count": 11,
+      "targets_met": 2,
+      "targets_measured": 4,
+      "target_benchmark_count": 24,
+      "target_status": "missed",
+      "capability_scores": [
+        {
+          "id": "coding",
+          "name": "Coding",
+          "score": null,
+          "benchmark_count": 0,
+          "measurement_count": 0,
+          "diagnostic_only": false,
+          "targets_met": 0,
+          "targets_measured": 0,
+          "target_benchmark_count": 1,
+          "target_status": "not-measured",
+          "benchmarks": [
+            {
+              "id": "livecodebench",
+              "name": "LiveCodeBench",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 55,
+              "target_metric": "pass_at_1",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            }
+          ]
+        },
+        {
+          "id": "efficiency-release",
+          "name": "Efficiency & Release",
+          "score": null,
+          "benchmark_count": 0,
+          "measurement_count": 0,
+          "diagnostic_only": false,
+          "targets_met": 1,
+          "targets_measured": 1,
+          "target_benchmark_count": 3,
+          "target_status": "partial",
+          "benchmarks": [
+            {
+              "id": "checkpoint-compatibility",
+              "name": "Checkpoint compatibility",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [
+                "2026-08-26-sft-hf-compatibility"
+              ],
+              "evidence_kinds": [
+                "compatibility-check"
+              ],
+              "diagnostic_only": false,
+              "target": 100,
+              "target_metric": "checks_pass_rate",
+              "target_direction": "higher",
+              "target_value": 100.0,
+              "target_status": "met"
+            },
+            {
+              "id": "quantization-retention",
+              "name": "Quantization retention",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 1,
+              "target_metric": "macro_score_loss_points",
+              "target_direction": "lower",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "release-completeness",
+              "name": "Release artifact completeness",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 100,
+              "target_metric": "checks_pass_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            }
+          ]
+        },
+        {
+          "id": "grounding-rag",
+          "name": "Grounding & RAG",
+          "score": 58.6,
+          "benchmark_count": 1,
+          "measurement_count": 1,
+          "diagnostic_only": false,
+          "targets_met": 0,
+          "targets_measured": 0,
+          "target_benchmark_count": 0,
+          "target_status": "not-set",
+          "benchmarks": [
+            {
+              "id": "oellm-grounding-holdouts",
+              "name": "OpenEuroLLM grounded-QA holdouts",
+              "score": 58.6,
+              "measurement_count": 1,
+              "evidence_runs": [
+                "published-sft-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": null,
+              "target_metric": "rubric_pass_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-set"
+            }
+          ]
+        },
+        {
+          "id": "instruction-chat",
+          "name": "Instruction & Chat",
+          "score": 55.0,
+          "benchmark_count": 2,
+          "measurement_count": 3,
+          "diagnostic_only": false,
+          "targets_met": 0,
+          "targets_measured": 1,
+          "target_benchmark_count": 5,
+          "target_status": "missed",
+          "benchmarks": [
+            {
+              "id": "arena-hard-eu",
+              "name": "ArenaHard-EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 50,
+              "target_metric": "win_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "ifbench",
+              "name": "IFBench",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 60,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "ifeval",
+              "name": "IFEval",
+              "score": 46.8,
+              "measurement_count": 2,
+              "evidence_runs": [
+                "published-sft-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "prompt_level_strict_accuracy",
+              "target_direction": "higher",
+              "target_value": 41.0,
+              "target_status": "missed"
+            },
+            {
+              "id": "lmarena-rank",
+              "name": "LMArena rank",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 200,
+              "target_metric": "rank",
+              "target_direction": "lower",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "maxife",
+              "name": "MultiChallenge/MAXIFE",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 80,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "oellm-instruction-holdouts",
+              "name": "OpenEuroLLM instruction holdouts",
+              "score": 63.2,
+              "measurement_count": 1,
+              "evidence_runs": [
+                "published-sft-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": null,
+              "target_metric": "instruction_following_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-set"
+            }
+          ]
+        },
+        {
+          "id": "long-context",
+          "name": "Long Context",
+          "score": 67.5,
+          "benchmark_count": 2,
+          "measurement_count": 5,
+          "diagnostic_only": false,
+          "targets_met": 1,
+          "targets_measured": 1,
+          "target_benchmark_count": 4,
+          "target_status": "partial",
+          "benchmarks": [
+            {
+              "id": "longbench",
+              "name": "LongBench",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 50,
+              "target_metric": "aggregate_score",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "mrcr-128k",
+              "name": "MRCR 128K",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 35,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "niah-exact-format",
+              "name": "NIAH exact output",
+              "score": 35.0,
+              "measurement_count": 4,
+              "evidence_runs": [
+                "published-sft-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": null,
+              "target_metric": "exact_format_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-set"
+            },
+            {
+              "id": "niah-natural",
+              "name": "Deterministic natural-word NIAH",
+              "score": 100.0,
+              "measurement_count": 1,
+              "evidence_runs": [
+                "published-sft-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": 95,
+              "target_metric": "full_retrieval_rate",
+              "target_direction": "higher",
+              "target_value": 100.0,
+              "target_status": "met"
+            },
+            {
+              "id": "ruler",
+              "name": "RULER",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 95,
+              "target_metric": "aggregate_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            }
+          ]
+        },
+        {
+          "id": "multilingual",
+          "name": "Multilingual",
+          "score": null,
+          "benchmark_count": 0,
+          "measurement_count": 0,
+          "diagnostic_only": false,
+          "targets_met": 0,
+          "targets_measured": 0,
+          "target_benchmark_count": 4,
+          "target_status": "not-measured",
+          "benchmarks": [
+            {
+              "id": "eu-language-fidelity",
+              "name": "EU language fidelity",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 98,
+              "target_metric": "correct_language_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "global-mmlu",
+              "name": "Global MMLU EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 70,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "include",
+              "name": "INCLUDE",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 74,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "mmlu-prox",
+              "name": "MMLU-ProX EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 50,
+              "target_metric": "exact_match",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            }
+          ]
+        },
+        {
+          "id": "reasoning-knowledge",
+          "name": "Reasoning & Knowledge",
+          "score": 26.2,
+          "benchmark_count": 6,
+          "measurement_count": 10,
+          "diagnostic_only": false,
+          "targets_met": 0,
+          "targets_measured": 1,
+          "target_benchmark_count": 2,
+          "target_status": "missed",
+          "benchmarks": [
+            {
+              "id": "arc-challenge",
+              "name": "ARC-Challenge",
+              "score": 47.5,
+              "measurement_count": 2,
+              "evidence_runs": [
+                "published-sft-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": null,
+              "target_metric": "accuracy_normalized",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-set"
+            },
+            {
+              "id": "gsm8k",
+              "name": "GSM8K",
+              "score": 30.9,
+              "measurement_count": 2,
+              "evidence_runs": [
+                "published-sft-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": null,
+              "target_metric": "exact_match",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-set"
+            },
+            {
+              "id": "math-500",
+              "name": "MATH-500",
+              "score": 0.4,
+              "measurement_count": 1,
+              "evidence_runs": [
+                "published-sft-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": null,
+              "target_metric": "exact_match",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-set"
+            },
+            {
+              "id": "mgsm",
+              "name": "MGSM EU",
+              "score": 21.7,
+              "measurement_count": 3,
+              "evidence_runs": [
+                "published-sft-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": 78,
+              "target_metric": "flexible_exact_match",
+              "target_direction": "higher",
+              "target_value": 21.7,
+              "target_status": "missed"
+            },
+            {
+              "id": "mmlu-college-cs",
+              "name": "MMLU college computer science",
+              "score": 51.0,
+              "measurement_count": 1,
+              "evidence_runs": [
+                "published-sft-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": null,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-set"
+            },
+            {
+              "id": "oellm-reasoning-holdouts",
+              "name": "OpenEuroLLM reasoning holdouts",
+              "score": 5.9,
+              "measurement_count": 1,
+              "evidence_runs": [
+                "published-sft-evidence"
+              ],
+              "evidence_kinds": [
+                "imported-published"
+              ],
+              "diagnostic_only": false,
+              "target": null,
+              "target_metric": "reasoning_math_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-set"
+            },
+            {
+              "id": "polymath",
+              "name": "PolyMath EU",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 55,
+              "target_metric": "exact_match",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            }
+          ]
+        },
+        {
+          "id": "safety",
+          "name": "Safety",
+          "score": null,
+          "benchmark_count": 0,
+          "measurement_count": 0,
+          "diagnostic_only": false,
+          "targets_met": 0,
+          "targets_measured": 0,
+          "target_benchmark_count": 2,
+          "target_status": "not-measured",
+          "benchmarks": [
+            {
+              "id": "harmbench",
+              "name": "HarmBench",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 5,
+              "target_metric": "attack_success_rate",
+              "target_direction": "lower",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "xstest",
+              "name": "XSTest",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 10,
+              "target_metric": "safe_prompt_refusal_rate",
+              "target_direction": "lower",
+              "target_value": null,
+              "target_status": "not-measured"
+            }
+          ]
+        },
+        {
+          "id": "tools-agents",
+          "name": "Tools & Agents",
+          "score": null,
+          "benchmark_count": 0,
+          "measurement_count": 0,
+          "diagnostic_only": false,
+          "targets_met": 0,
+          "targets_measured": 0,
+          "target_benchmark_count": 3,
+          "target_status": "not-measured",
+          "benchmarks": [
+            {
+              "id": "bfcl",
+              "name": "Berkeley Function Calling Leaderboard",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 60,
+              "target_metric": "overall_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "browsecomp",
+              "name": "BrowseComp",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 25,
+              "target_metric": "accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "tau2-bench",
+              "name": "tau2-bench",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 65,
+              "target_metric": "pass_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_status": "not-measured"
+            }
+          ]
+        }
+      ]
     }
   ],
   "runs": [

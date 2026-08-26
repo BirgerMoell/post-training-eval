@@ -3,54 +3,58 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="OpenEuroLLM post-training evaluation evidence and capability coverage">
-  <title>OpenEuroLLM · Post-training evaluation</title>
+  <meta name="description" content="Compare OpenEuroLLM post-training model capabilities, targets, and benchmark evidence">
+  <title>OpenEuroLLM · Model capability comparison</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="hero">
+  <header class="hero compare-hero">
     <nav><a class="wordmark" href="./">OPENEUROLLM / EVAL</a><div class="nav-links"><a href="skill.html">Agent skill</a><a href="https://github.com/BirgerMoell/post-training-eval">Repository ↗</a></div></nav>
-    <div class="hero-grid">
-      <div>
-        <p class="eyebrow">POST-TRAINING CONTROL PLANE</p>
-        <h1>Evidence before<br><span>model claims.</span></h1>
-      </div>
-      <p class="intro">Checkpoint-level results across nine capabilities, with immutable revisions, protocol provenance, language slices, and visible gaps. Imported evidence and fresh reproductions are never conflated.</p>
+    <div class="hero-grid compare-hero-grid">
+      <div><p class="eyebrow">MODEL COMPARISON</p><h1>Compare model<br><span>capabilities.</span></h1></div>
+      <p class="intro">Start with one model index, compare nine capability scores, then open the benchmark evidence. Targets and missing evaluations stay visible.</p>
     </div>
   </header>
 
-  <main>
-    <section id="summary" class="summary" aria-label="Evaluation summary"></section>
-    <section id="gate-summary" class="gate-summary" aria-label="Latest comparison gate"></section>
-
-    <section class="panel coverage-section">
-      <div class="section-heading"><div><p class="eyebrow">COVERAGE</p><h2>What has actually been tested?</h2></div><p>Dots show at least one published metric, not that a release gate has passed.</p></div>
-      <div id="coverage" class="coverage" role="table" aria-label="Model capability coverage"></div>
+  <main class="comparison-main">
+    <section class="panel primary-panel">
+      <div class="section-heading compact-heading"><div><p class="eyebrow">01 / MODELS</p><h2>Aggregate capability</h2></div><p>Scores summarize available quality evidence. Coverage is shown because missing capabilities are never counted as zero.</p></div>
+      <div id="model-scorecards" class="model-scorecards"></div>
+      <details class="method-note"><summary>How the aggregate is calculated</summary><p id="score-method"></p></details>
     </section>
 
-    <section class="panel">
-      <div class="section-heading"><div><p class="eyebrow">EVIDENCE LEDGER</p><h2>Scores and provenance</h2></div><p id="result-count" aria-live="polite"></p></div>
-      <div class="filters">
-        <label>Model<select id="model-filter"><option value="">All models</option></select></label>
-        <label>Capability<select id="capability-filter"><option value="">All capabilities</option></select></label>
-        <label>Evidence<select id="evidence-filter"><option value="">All evidence</option></select></label>
-        <label class="search">Search<input id="search-filter" type="search" placeholder="benchmark, metric, language…"></label>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Model</th><th>Capability / benchmark</th><th>Slice</th><th>Score</th><th>Target</th><th>Evidence</th></tr></thead>
-          <tbody id="results"></tbody>
-        </table>
-      </div>
+    <section class="panel comparison-panel">
+      <div class="section-heading compact-heading"><div><p class="eyebrow">02 / CAPABILITIES</p><h2>Side-by-side comparison</h2></div><p>Open a capability to compare its benchmarks and target status.</p></div>
+      <div id="capability-comparison" class="capability-comparison"></div>
     </section>
 
-    <section class="panel capability-section">
-      <div class="section-heading"><div><p class="eyebrow">PLAYBOOK</p><h2>Nine capability contracts</h2></div><p>Operational status refers to runner availability—not model quality.</p></div>
+    <section id="gate-summary" class="gate-summary compact-gate" aria-label="Latest comparison gate"></section>
+
+    <details id="evidence-explorer" class="panel evidence-panel">
+      <summary><span><span class="eyebrow">03 / EVIDENCE</span><strong>Benchmark ledger</strong></span><span id="result-count" aria-live="polite"></span></summary>
+      <div class="evidence-content">
+        <div class="filters">
+          <label>Model<select id="model-filter"><option value="">All models</option></select></label>
+          <label>Capability<select id="capability-filter"><option value="">All capabilities</option></select></label>
+          <label>Evidence<select id="evidence-filter"><option value="">All evidence</option></select></label>
+          <label class="search">Search<input id="search-filter" type="search" placeholder="benchmark, metric, language…"></label>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Model</th><th>Capability / benchmark</th><th>Slice</th><th>Score</th><th>Target</th><th>Evidence</th></tr></thead>
+            <tbody id="results"></tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+
+    <section class="panel capability-section playbook-bottom">
+      <div class="section-heading"><div><p class="eyebrow">PLAYBOOK</p><h2>Nine capability contracts</h2></div><p>Runner status describes availability, not model quality.</p></div>
       <div id="capabilities" class="capability-grid"></div>
     </section>
   </main>
 
-  <footer><p>Generated from versioned JSON in the repository. <span id="generated"></span></p></footer>
+  <footer><p>Generated from versioned evaluation records. <span id="generated"></span></p></footer>
   <script src="app.js" defer></script>
 </body>
 </html>

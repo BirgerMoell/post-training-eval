@@ -7,7 +7,7 @@ from pathlib import Path
 from post_training_eval.checkpoints import parse_checkpoint
 from post_training_eval.planner import build_plan
 from post_training_eval.registry import benchmark_index, validate_registry
-from post_training_eval.results import ResultError, _task_to_benchmark, build_site_data, ingest_lm_eval, ingest_lm_eval_directory, ingest_oellm_csv, publish_run
+from post_training_eval.results import ResultError, _build_model_scorecard, _task_to_benchmark, build_site_data, ingest_lm_eval, ingest_lm_eval_directory, ingest_oellm_csv, publish_run
 from post_training_eval.gates import compare_runs
 from post_training_eval.holdouts import _sample_by_bucket
 
@@ -153,6 +153,50 @@ class RegistryResultTests(unittest.TestCase):
         data = build_site_data()
         self.assertGreaterEqual(len(data["models"]), 2)
         self.assertGreater(len(data["runs"]), 0)
+        self.assertIn("aggregate_score", data["models"][0])
+        self.assertIn("score_method", data)
+
+    def test_scorecard_prefers_complete_published_evidence_over_diagnostic_alias(self):
+        capabilities = [{"id": "instruction-chat", "name": "Instruction & Chat", "benchmarks": [{"id": "ifeval", "name": "IFEval", "direction": "higher"}]}]
+        imported = {"run_id": "published", "status": "imported", "model": {"id": "owner/model"}, "provenance": {"kind": "imported-published"}, "metrics": [{"capability": "instruction-chat", "benchmark": "ifeval", "metric": "prompt_level_strict_accuracy", "value": 60, "scale": "percentage"}]}
+        diagnostic = {"run_id": "smoke", "status": "completed", "diagnostic": True, "finished_at": "2026-08-26T10:00:00Z", "model": {"id": "owner/model"}, "provenance": {"kind": "fresh-reproduced"}, "metrics": [{"capability": "instruction-chat", "benchmark": "ifeval", "metric": "prompt_level_strict_acc,none", "value": 20, "scale": "percentage"}]}
+        scorecard = _build_model_scorecard("owner/model", [imported, diagnostic], capabilities)
+        self.assertEqual(scorecard["aggregate_score"], 60.0)
+        self.assertEqual(scorecard["capability_scores"][0]["benchmark_count"], 1)
+
+    def test_scorecard_reports_met_missed_and_unmeasured_targets(self):
+        capabilities = [{"id": "cap", "name": "Capability", "benchmarks": [
+            {"id": "high", "name": "Higher", "metric": "accuracy", "direction": "higher", "target": 60},
+            {"id": "low", "name": "Lower", "metric": "attack_success_rate", "direction": "lower", "target": 5},
+            {"id": "missing", "name": "Missing", "metric": "accuracy", "direction": "higher", "target": 70},
+        ]}]
+        run = {"run_id": "run", "status": "completed", "model": {"id": "owner/model"}, "provenance": {"kind": "fresh-reproduced"}, "metrics": [
+            {"capability": "cap", "benchmark": "high", "metric": "acc,none", "value": 75, "scale": "percentage"},
+            {"capability": "cap", "benchmark": "low", "metric": "attack_success_rate", "value": 8, "scale": "percentage"},
+        ]}
+        scorecard = _build_model_scorecard("owner/model", [run], capabilities)
+        benchmarks = {item["id"]: item for item in scorecard["capability_scores"][0]["benchmarks"]}
+        self.assertEqual(benchmarks["high"]["target_status"], "met")
+        self.assertEqual(benchmarks["low"]["target_status"], "missed")
+        self.assertEqual(scorecard["target_status"], "missed")
+        self.assertEqual(scorecard["targets_measured"], 2)
+        self.assertEqual(scorecard["target_benchmark_count"], 3)
+
+    def test_scorecard_weights_capabilities_equally_and_keeps_missing_visible(self):
+        capabilities = [
+            {"id": "a", "name": "A", "benchmarks": [{"id": "a1", "name": "A1", "direction": "higher"}]},
+            {"id": "b", "name": "B", "benchmarks": [{"id": "b1", "name": "B1", "direction": "higher"}, {"id": "b2", "name": "B2", "direction": "higher"}]},
+            {"id": "missing", "name": "Missing", "benchmarks": []},
+        ]
+        run = {"run_id": "run", "status": "completed", "model": {"id": "owner/model"}, "provenance": {"kind": "fresh-reproduced"}, "metrics": [
+            {"capability": "a", "benchmark": "a1", "metric": "accuracy", "value": 20, "scale": "percentage"},
+            {"capability": "b", "benchmark": "b1", "metric": "accuracy", "value": 100, "scale": "percentage"},
+            {"capability": "b", "benchmark": "b2", "metric": "accuracy", "value": 100, "scale": "percentage"},
+        ]}
+        scorecard = _build_model_scorecard("owner/model", [run], capabilities)
+        self.assertEqual(scorecard["aggregate_score"], 60.0)
+        self.assertEqual(scorecard["scored_capability_count"], 2)
+        self.assertIsNone(scorecard["capability_scores"][2]["score"])
 
     def test_gate_detects_regression(self):
         baseline = {"run_id": "base", "metrics": [{"capability": "instruction-chat", "benchmark": "ifeval", "metric": "prompt_level_strict_accuracy", "value": 50, "scale": "percentage", "direction": "higher"}]}

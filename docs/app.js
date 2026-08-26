@@ -5,9 +5,29 @@ const shortModel = id => id.split("/").pop();
 const shortSha = sha => sha ? sha.slice(0, 9) : "unpinned";
 const label = value => String(value || "").replaceAll("-", " ").replace(/\b\w/g, c => c.toUpperCase());
 
+function canonicalMetric(value) {
+  const aliases = {
+    "prompt_level_strict_acc": "prompt_level_strict_accuracy",
+    "inst_level_strict_acc": "instruction_level_strict_accuracy",
+    "inst_level_strict_accuracy": "instruction_level_strict_accuracy",
+    "acc_norm": "accuracy_normalized",
+    "acc": "accuracy",
+    "exact_match,strict-match": "exact_match_strict",
+    "exact_match,flexible-extract": "exact_match_flexible",
+    "flexible_exact_match": "exact_match_flexible"
+  };
+  const raw = String(value || "");
+  const normalized = raw.endsWith(",none") ? raw.slice(0, -5) : raw;
+  return aliases[raw] || aliases[normalized] || normalized;
+}
+
 function lookupBenchmark(capability, benchmark) {
   const cap = state.data.capabilities.find(item => item.id === capability);
   return cap?.benchmarks.find(item => item.id === benchmark);
+}
+
+function modelCapability(model, capabilityId) {
+  return model.capability_scores.find(item => item.id === capabilityId);
 }
 
 function scoreText(metric) {
@@ -21,6 +41,32 @@ function flatten() {
   return state.data.runs.flatMap(run => run.metrics.map(metric => ({ run, metric })));
 }
 
+function targetLabel(status) {
+  return ({
+    met: "On target",
+    missed: "Off target",
+    partial: "Partial coverage",
+    "not-measured": "Not measured",
+    "not-set": "No target"
+  })[status] || "No target";
+}
+
+function targetBadge(status) {
+  return `<span class="target-badge ${escapeHtml(status)}">${escapeHtml(targetLabel(status))}</span>`;
+}
+
+function targetThreshold(benchmark) {
+  if (benchmark?.target == null) return "No numeric target";
+  return `${benchmark.direction === "lower" ? "≤" : "≥"} ${benchmark.target}`;
+}
+
+function metricTargetStatus(metric, benchmark) {
+  if (benchmark?.target == null) return "not-set";
+  if (canonicalMetric(metric.metric) !== canonicalMetric(benchmark.metric)) return "not-set";
+  const met = benchmark.direction === "lower" ? metric.value <= benchmark.target : metric.value >= benchmark.target;
+  return met ? "met" : "missed";
+}
+
 function evidenceCell(run) {
   const source = /^https?:\/\//.test(run.provenance.source)
     ? `<a class="source" href="${escapeHtml(run.provenance.source)}">source ↗</a>`
@@ -31,16 +77,24 @@ function evidenceCell(run) {
   return `<span class="pill ${escapeHtml(run.provenance.kind)}">${escapeHtml(label(run.provenance.kind))}</span>${caveat}${source}`;
 }
 
-function renderSummary() {
-  const evidence = new Set(state.data.runs.map(run => run.provenance.kind));
-  const fresh = state.data.runs.filter(run => run.provenance.kind === "fresh-reproduced").length;
-  const values = [
-    [state.data.models.length, "models registered"],
-    [state.data.runs.length, "versioned evidence runs"],
-    [flatten().length, "individual measurements"],
-    [fresh, `fresh reproduced run${fresh === 1 ? "" : "s"} · ${evidence.size} evidence types`]
-  ];
-  document.querySelector("#summary").innerHTML = values.map(([value, text]) => `<div class="stat"><strong>${value}</strong><span>${escapeHtml(text)}</span></div>`).join("");
+function renderScorecards() {
+  const cards = state.data.models.map(model => {
+    const aggregate = model.aggregate_score == null ? "—" : model.aggregate_score.toFixed(1);
+    const capabilities = model.capability_scores.map(capability => {
+      const score = capability.score == null ? "—" : capability.score.toFixed(1);
+      return `<button class="mini-capability ${capability.score == null ? "missing" : ""} target-${escapeHtml(capability.target_status)}" type="button" data-model="${escapeHtml(model.id)}" data-capability="${escapeHtml(capability.id)}" title="Open ${escapeHtml(capability.name)} evidence for ${escapeHtml(shortModel(model.id))}"><span>${escapeHtml(capability.name)}</span><strong>${score}</strong></button>`;
+    }).join("");
+    const targetCopy = `${model.targets_met}/${model.targets_measured} measured targets met · ${model.targets_measured}/${model.target_benchmark_count} target evaluations measured`;
+    return `<article class="model-scorecard">
+      <div class="model-card-head"><div><p class="eyebrow">MODEL</p><h3>${escapeHtml(shortModel(model.id))}</h3><span class="model-revision">${escapeHtml(model.revisions.map(shortSha).join(" · "))}</span></div>${targetBadge(model.target_status)}</div>
+      <div class="aggregate"><strong>${aggregate}</strong><span>capability index / 100<br>${model.scored_capability_count}/${model.total_capability_count} capabilities scored</span></div>
+      <div class="aggregate-track"><span style="width:${model.aggregate_score || 0}%"></span></div>
+      <p class="target-summary">${escapeHtml(targetCopy)}</p>
+      <div class="mini-capability-grid">${capabilities}</div>
+    </article>`;
+  }).join("");
+  document.querySelector("#model-scorecards").innerHTML = cards;
+  document.querySelectorAll(".mini-capability").forEach(button => button.addEventListener("click", () => openCapability(button.dataset.capability, button.dataset.model)));
 }
 
 function renderGate() {
@@ -48,31 +102,65 @@ function renderGate() {
   const target = document.querySelector("#gate-summary");
   if (!gate) { target.hidden = true; return; }
   const status = gate.status === "passed" ? "PASS" : "FAIL";
-  const details = gate.regressions.length
-    ? gate.regressions.map(item => `${label(item.key[1])} ${item.key[2]}: ${item.improvement.toFixed(2)} pts`).join(" · ")
-    : "No comparable metric exceeded the regression tolerance.";
-  target.innerHTML = `<div><p class="eyebrow">LATEST PARENT RETENTION GATE</p><h2><span class="gate-status ${gate.status}">${status}</span> ${escapeHtml(shortModel(gate.candidate_run.replace(/^published-/, "")))}</h2></div><p>${escapeHtml(gate.comparison_count)} matched measurements · tolerance ${escapeHtml(gate.max_regression_points)} points<br><strong>${escapeHtml(details)}</strong></p>`;
+  const regressions = gate.regressions.length
+    ? gate.regressions.map(item => `${label(item.key[1])}: ${item.improvement.toFixed(2)} pts`).join(" · ")
+    : "No matched metric exceeded the tolerance.";
+  target.innerHTML = `<p><span class="gate-status ${gate.status}">${status}</span><strong>Latest parent-retention gate</strong> · ${gate.comparison_count} matched measurements</p><span>${escapeHtml(regressions)}</span>`;
 }
 
-function renderCoverage() {
-  const caps = state.data.capabilities;
-  const head = `<div class="coverage-row coverage-head"><div class="coverage-cell">Model / capability</div>${caps.map(cap => `<div class="coverage-cell">${escapeHtml(cap.name)}</div>`).join("")}</div>`;
-  const rows = state.data.models.map(model => {
-    const cells = caps.map(cap => `<div class="coverage-cell" title="${model.capabilities.includes(cap.id) ? "Evidence present" : "No evidence"}"><span class="dot ${model.capabilities.includes(cap.id) ? "" : "missing"}"></span></div>`).join("");
-    return `<div class="coverage-row"><div class="coverage-cell">${escapeHtml(shortModel(model.id))}<span class="model-revision">${model.metric_count} metrics</span></div>${cells}</div>`;
+function benchmarkCell(model, capabilityId, benchmark) {
+  const capability = modelCapability(model, capabilityId);
+  const evidence = capability?.benchmarks.find(item => item.id === benchmark.id);
+  const score = evidence?.score == null ? "—" : evidence.score.toFixed(1);
+  const status = evidence?.target_status || (benchmark.target == null ? "not-set" : "not-measured");
+  const value = evidence?.target_value == null ? "" : `<small>measured ${escapeHtml(evidence.target_value)}</small>`;
+  return `<div class="benchmark-model-cell"><strong>${score}</strong>${targetBadge(status)}${value}</div>`;
+}
+
+function renderCapabilityComparison() {
+  const models = state.data.models;
+  const header = `<div class="comparison-header comparison-columns" style="--model-count:${models.length}"><span>Capability</span>${models.map(model => `<span>${escapeHtml(shortModel(model.id))}</span>`).join("")}</div>`;
+  const rows = state.data.capabilities.map(capability => {
+    const modelSummaries = models.map(model => {
+      const result = modelCapability(model, capability.id);
+      const score = result?.score == null ? "—" : result.score.toFixed(1);
+      return `<div class="capability-model-summary"><strong>${score}</strong><div class="score-track"><span style="width:${result?.score || 0}%"></span></div>${targetBadge(result?.target_status || "not-measured")}<small>${result?.benchmark_count || 0} scored evals</small></div>`;
+    }).join("");
+    const benchmarks = capability.benchmarks.map(benchmark => `<div class="benchmark-row comparison-columns" style="--model-count:${models.length}"><div><strong>${escapeHtml(benchmark.name)}</strong><small>${escapeHtml(benchmark.metric)} · ${escapeHtml(targetThreshold(benchmark))}</small></div>${models.map(model => benchmarkCell(model, capability.id, benchmark)).join("")}</div>`).join("");
+    return `<details class="capability-comparison-row" id="capability-${escapeHtml(capability.id)}"><summary class="comparison-columns" style="--model-count:${models.length}"><div class="capability-title"><span>${escapeHtml(capability.name)}</span><small>${capability.benchmarks.length} registered evaluations</small></div>${modelSummaries}</summary><div class="benchmark-list">${benchmarks}<button class="evidence-button" type="button" data-capability="${escapeHtml(capability.id)}">Open evidence ledger</button></div></details>`;
   }).join("");
-  document.querySelector("#coverage").innerHTML = head + rows;
+  document.querySelector("#capability-comparison").innerHTML = header + rows;
+  document.querySelectorAll(".evidence-button").forEach(button => button.addEventListener("click", () => openEvidence("", button.dataset.capability)));
+}
+
+function openCapability(capabilityId, modelId) {
+  const detail = document.querySelector(`#capability-${CSS.escape(capabilityId)}`);
+  if (detail) {
+    detail.open = true;
+    detail.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+function openEvidence(modelId, capabilityId) {
+  state.filters.model = modelId;
+  state.filters.capability = capabilityId;
+  document.querySelector("#model-filter").value = modelId;
+  document.querySelector("#capability-filter").value = capabilityId;
+  document.querySelector("#evidence-explorer").open = true;
+  renderResults();
+  document.querySelector("#evidence-explorer").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderCapabilities() {
   document.querySelector("#capabilities").innerHTML = state.data.capabilities.map((cap, index) => {
     const operational = cap.benchmarks.filter(item => item.status === "operational").length;
+    const targeted = cap.benchmarks.filter(item => item.target != null).length;
     const benchmarks = cap.benchmarks.map(item => {
-      const target = item.target === undefined ? "" : ` · target ${item.direction === "lower" ? "≤" : "≥"}${item.target}`;
+      const target = item.target == null ? "no numeric target" : `target ${item.direction === "lower" ? "≤" : "≥"}${item.target}`;
       const name = item.url ? `<a href="${escapeHtml(item.url)}">${escapeHtml(item.name)} ↗</a>` : escapeHtml(item.name);
-      return `<li><span>${name}<small>${escapeHtml(item.metric)}${escapeHtml(target)}</small></span><span class="status ${escapeHtml(item.status)}">${escapeHtml(label(item.status))}</span></li>`;
+      return `<li><span>${name}<small>${escapeHtml(item.metric)} · ${escapeHtml(target)}</small></span><span class="status ${escapeHtml(item.status)}">${escapeHtml(label(item.status))}</span></li>`;
     }).join("");
-    return `<article class="capability-card"><span class="number">${String(index + 1).padStart(2, "0")}</span><h3>${escapeHtml(cap.name)}</h3><p>${escapeHtml(cap.question)}</p><div class="counts"><span>${cap.benchmarks.length} benchmarks</span><span>${operational} operational</span></div><details><summary>View evaluation plan</summary><ul>${benchmarks}</ul></details></article>`;
+    return `<article class="capability-card"><span class="number">${String(index + 1).padStart(2, "0")}</span><h3>${escapeHtml(cap.name)}</h3><p>${escapeHtml(cap.question)}</p><div class="counts"><span>${operational} operational</span><span>${targeted} targets</span></div><details><summary>Evaluation contract</summary><ul>${benchmarks}</ul></details></article>`;
   }).join("");
 }
 
@@ -98,10 +186,10 @@ function renderResults() {
   document.querySelector("#result-count").textContent = `${filtered.length} of ${flatten().length} measurements`;
   document.querySelector("#results").innerHTML = filtered.length ? filtered.map(({run, metric}) => {
     const benchmark = lookupBenchmark(metric.capability, metric.benchmark);
-    const target = metric.metric === benchmark?.metric ? benchmark?.target : undefined;
-    const targetText = target === undefined ? "—" : `${benchmark.direction === "lower" ? "≤" : "≥"} ${target}${metric.scale === "percentage" ? "%" : ""}`;
+    const status = metricTargetStatus(metric, benchmark);
+    const target = status === "not-set" ? "—" : targetThreshold(benchmark);
     const slice = [metric.language ? `lang: ${metric.language}` : "", metric.slice, metric.n ? `n=${metric.n}` : ""].filter(Boolean).join(" · ") || "—";
-    return `<tr><td><span class="model-name">${escapeHtml(shortModel(run.model.id))}</span><span class="model-revision">${escapeHtml(shortSha(run.model.revision))}</span></td><td><span class="cap-label">${escapeHtml(label(metric.capability))}</span><span class="benchmark">${escapeHtml(benchmark?.name || label(metric.benchmark))}</span><span class="metric">${escapeHtml(metric.metric)}</span></td><td>${escapeHtml(slice)}</td><td><span class="score">${escapeHtml(scoreText(metric))}</span></td><td>${escapeHtml(targetText)}</td><td>${evidenceCell(run)}</td></tr>`;
+    return `<tr><td><span class="model-name">${escapeHtml(shortModel(run.model.id))}</span><span class="model-revision">${escapeHtml(shortSha(run.model.revision))}</span></td><td><span class="cap-label">${escapeHtml(label(metric.capability))}</span><span class="benchmark">${escapeHtml(benchmark?.name || label(metric.benchmark))}</span><span class="metric">${escapeHtml(metric.metric)}</span></td><td>${escapeHtml(slice)}</td><td><span class="score">${escapeHtml(scoreText(metric))}</span></td><td>${targetBadge(status)}<small class="target-threshold">${escapeHtml(target)}</small></td><td>${evidenceCell(run)}</td></tr>`;
   }).join("") : `<tr><td class="empty" colspan="6">No evidence matches these filters.</td></tr>`;
 }
 
@@ -109,7 +197,8 @@ async function init() {
   const response = await fetch("data/index.json", { cache: "no-store" });
   if (!response.ok) throw new Error(`Could not load data: ${response.status}`);
   state.data = await response.json();
-  renderSummary(); renderGate(); renderCoverage(); renderCapabilities(); populateFilters(); renderResults();
+  renderScorecards(); renderGate(); renderCapabilityComparison(); renderCapabilities(); populateFilters(); renderResults();
+  document.querySelector("#score-method").innerHTML = `<strong>${escapeHtml(state.data.score_method.name)}:</strong> ${escapeHtml(state.data.score_method.description)} <span>Excluded: ${escapeHtml(state.data.score_method.exclusions.join(", "))}.</span>`;
   document.querySelector("#generated").textContent = `Last built ${new Date(state.data.generated_at).toLocaleString()}.`;
 }
 
