@@ -122,7 +122,7 @@ def build_evalchemy_command(
 ) -> list[str]:
     if not tasks:
         raise LocalQuickError("Evalchemy batches must be non-empty")
-    model_args = f"trust_remote_code=True,pretrained={model}"
+    model_args = f"trust_remote_code=True,pretrained={model},dtype=bfloat16"
     if tokenizer:
         model_args += f",tokenizer={tokenizer}"
     return [
@@ -146,6 +146,8 @@ def build_evalchemy_command(
         str(output),
         "--limit",
         str(limit),
+        "--apply_chat_template",
+        "--log_samples",
     ]
 
 
@@ -197,6 +199,9 @@ def run_local_quick(
         manifest = json.loads(manifest_path.read_text())
         if manifest.get("model") != model or manifest.get("limit") != limit:
             raise LocalQuickError("Existing manifest belongs to a different model or limit")
+        existing_suites = manifest.get("suites") or sorted({task["suite"] for task in manifest.get("tasks", [])})
+        if sorted(existing_suites) != sorted(requested):
+            raise LocalQuickError("Existing manifest was created for a different harness selection")
     else:
         manifest = {
             "schema_version": 1,
@@ -205,6 +210,7 @@ def run_local_quick(
             "model": model,
             "limit": limit,
             "gpu": gpu,
+            "suites": sorted(requested),
             "started_at": _now(),
             "tasks": [asdict(task) for task in tasks],
             "batches": {},

@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from post_training_eval.local_quick import TaskSpec, batch_tasks, build_lm_eval_command
+from post_training_eval.local_quick import TaskSpec, batch_tasks, build_evalchemy_command, build_lm_eval_command
 
 
 class LocalQuickTests(unittest.TestCase):
@@ -29,6 +29,21 @@ class LocalQuickTests(unittest.TestCase):
         self.assertEqual(command[command.index("--batch_size") + 1], "1")
         self.assertEqual(command[command.index("--limit") + 1], "8")
         self.assertIn("dtype=bfloat16", command[command.index("--model_args") + 1])
+
+    def test_evalchemy_command_uses_same_chat_and_precision_protocol(self):
+        command = build_evalchemy_command(
+            "/evalchemy/bin/python",
+            "/models/checkpoint",
+            [TaskSpec("MATH500", 0, "evalchemy")],
+            Path("/runs/chunk"),
+            8,
+            "/tokenizers/checkpoint",
+        )
+        self.assertIn("--apply_chat_template", command)
+        self.assertIn("--log_samples", command)
+        model_args = command[command.index("--model_args") + 1]
+        self.assertIn("dtype=bfloat16", model_args)
+        self.assertIn("tokenizer=/tokenizers/checkpoint", model_args)
 
 
 if __name__ == "__main__":
