@@ -2,6 +2,8 @@
 
 A capability-driven evaluation control plane for Hugging Face and Megatron checkpoints. It turns the post-training playbook into executable profiles, normalized evidence, regression gates, and a public model-by-capability scoreboard.
 
+**[Open the live evaluation dashboard →](https://birgermoell.github.io/post-training-eval/)**
+
 This repository deliberately separates three kinds of evidence:
 
 - **Fresh reproduced** — created by a runner from a pinned checkpoint revision and retained raw artifacts.
