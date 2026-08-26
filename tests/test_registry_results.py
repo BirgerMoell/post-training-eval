@@ -28,13 +28,14 @@ class RegistryResultTests(unittest.TestCase):
         self.assertTrue(all(not step["runnable"] for step in blocked))
 
     def test_lm_eval_ingestion(self):
-        raw = {"results": {"ifeval": {"prompt_level_strict_acc,none": 0.75}}, "n-samples": {"ifeval": {"effective": 100}}, "versions": {"lm_eval": "0.4.11"}}
+        raw = {"date": 1787730830.0, "results": {"ifeval": {"prompt_level_strict_acc,none": 0.75}}, "n-samples": {"ifeval": {"effective": 100}}, "versions": {"lm_eval": "0.4.11"}}
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "result.json"
             path.write_text(json.dumps(raw))
             run = ingest_lm_eval(path, "owner/model", "test-run", "abc", "lm_eval ...")
         self.assertEqual(run["metrics"][0]["value"], 75.0)
         self.assertEqual(run["metrics"][0]["capability"], "instruction-chat")
+        self.assertEqual(run["started_at"], "2026-08-26T07:53:50+00:00")
 
     def test_multilingual_task_mapping_preserves_language(self):
         raw = {"results": {"sib200_swe_Latn": {"acc_norm,none": 0.8}}, "n-samples": {}}

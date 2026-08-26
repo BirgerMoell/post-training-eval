@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-08-26-sft-chat-smoke",
+  "status": "completed",
+  "diagnostic": true,
+  "started_at": "2026-08-26T07:53:50.931987+00:00",
+  "finished_at": "2026-08-26T08:14:22.093290+00:00",
+  "model": {
+    "id": "birgermoell/oellm-9b-256k-sft",
+    "revision": "08359ad61333263c067edaf290067fea5b103d34",
+    "format": "hf"
+  },
+  "provenance": {
+    "kind": "fresh-reproduced",
+    "source": "LUMI /scratch/project_465002530/users/bmoell/post-training-eval/runs/raw/2026-08-26-sft-chat-smoke",
+    "command": "LUMI job 21536936; lm-eval arc_challenge,ifeval --limit 16 --apply_chat_template",
+    "harness": "lm-evaluation-harness",
+    "protocol": "Native Hugging Face chat template, deterministic decoding, bfloat16, batch size 1, one AMD MI250X GCD."
+  },
+  "environment": {
+    "platform": "LUMI-G dev-g",
+    "accelerator": "AMD MI250X GCD",
+    "container": "laif-rocm-6.4.4-pytorch-2.9.1"
+  },
+  "limitations": [
+    "Diagnostic --limit 16 sample only; uncertainty is high and these are not release estimates.",
+    "This smoke run covers only ARC-Challenge and IFEval, not the full capability playbook."
+  ],
+  "metrics": [
+    {
+      "capability": "reasoning-knowledge",
+      "benchmark": "arc-challenge",
+      "task": "arc_challenge",
+      "metric": "acc_norm,none",
+      "value": 31.25,
+      "scale": "percentage",
+      "direction": "higher",
+      "language": null,
+      "n": 16
+    },
+    {
+      "capability": "instruction-chat",
+      "benchmark": "ifeval",
+      "task": "ifeval",
+      "metric": "prompt_level_strict_acc,none",
+      "value": 50.0,
+      "scale": "percentage",
+      "direction": "higher",
+      "language": null,
+      "n": 16
+    }
+  ]
+}

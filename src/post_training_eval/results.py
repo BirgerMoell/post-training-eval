@@ -99,6 +99,15 @@ def _normal_value(value: float, metric_name: str) -> tuple[float, str]:
     return (value * 100 if -1 <= value <= 1 else value), "percentage"
 
 
+def _iso_timestamp(value: Any, fallback: str) -> str:
+    """Normalize lm-eval's numeric or textual run date for stable site sorting."""
+    if isinstance(value, (int, float)):
+        return datetime.fromtimestamp(value, timezone.utc).isoformat()
+    if isinstance(value, str) and value.strip():
+        return value
+    return fallback
+
+
 def ingest_lm_eval(input_path: Path, model_id: str, run_id: str, model_revision: str | None, source_command: str | None) -> dict[str, Any]:
     raw = load_json(input_path)
     registry = benchmark_index()
@@ -129,7 +138,7 @@ def ingest_lm_eval(input_path: Path, model_id: str, run_id: str, model_revision:
         "schema_version": 1,
         "run_id": run_id,
         "status": "completed" if metrics else "failed",
-        "started_at": raw.get("date") or now,
+        "started_at": _iso_timestamp(raw.get("date"), now),
         "finished_at": now,
         "model": {"id": model_id, "revision": model_revision, "format": "hf"},
         "provenance": {"kind": "fresh-reproduced", "source": str(input_path), "command": source_command, "harness": "lm-evaluation-harness", "harness_version": (raw.get("versions") or {}).get("lm_eval")},

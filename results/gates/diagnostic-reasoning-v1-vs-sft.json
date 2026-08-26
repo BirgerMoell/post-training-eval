@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "candidate_run": "2026-08-26-reasoning-v1-chat-smoke",
+  "baseline_run": "2026-08-26-sft-chat-smoke",
+  "diagnostic": true,
+  "max_regression_points": 2.0,
+  "status": "failed",
+  "comparison_count": 2,
+  "regressions": [
+    {
+      "key": ["instruction-chat", "ifeval", "prompt_level_strict_acc,none", null, null],
+      "baseline": 50.0,
+      "candidate": 18.75,
+      "improvement": -31.25,
+      "direction": "higher",
+      "passed": false
+    }
+  ],
+  "targets_missed": [],
+  "comparisons": [
+    {
+      "key": ["reasoning-knowledge", "arc-challenge", "acc_norm,none", null, null],
+      "baseline": 31.25,
+      "candidate": 31.25,
+      "improvement": 0.0,
+      "direction": "higher",
+      "passed": true
+    },
+    {
+      "key": ["instruction-chat", "ifeval", "prompt_level_strict_acc,none", null, null],
+      "baseline": 50.0,
+      "candidate": 18.75,
+      "improvement": -31.25,
+      "direction": "higher",
+      "passed": false
+    }
+  ],
+  "limitations": ["Both runs use only 16 examples per task; this gate is a diagnostic signal, not a release decision."],
+  "note": "Target misses are reported separately; a development regression gate fails only on comparable metrics beyond tolerance."
+}

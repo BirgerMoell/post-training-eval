@@ -21,6 +21,16 @@ function flatten() {
   return state.data.runs.flatMap(run => run.metrics.map(metric => ({ run, metric })));
 }
 
+function evidenceCell(run) {
+  const source = /^https?:\/\//.test(run.provenance.source)
+    ? `<a class="source" href="${escapeHtml(run.provenance.source)}">source ↗</a>`
+    : `<span class="source" title="${escapeHtml(run.provenance.source)}">archived raw artifact</span>`;
+  const caveat = run.diagnostic
+    ? `<span class="pill diagnostic" title="${escapeHtml((run.limitations || []).join(" "))}">Diagnostic</span>`
+    : "";
+  return `<span class="pill ${escapeHtml(run.provenance.kind)}">${escapeHtml(label(run.provenance.kind))}</span>${caveat}${source}`;
+}
+
 function renderSummary() {
   const evidence = new Set(state.data.runs.map(run => run.provenance.kind));
   const fresh = state.data.runs.filter(run => run.provenance.kind === "fresh-reproduced").length;
@@ -91,7 +101,7 @@ function renderResults() {
     const target = metric.metric === benchmark?.metric ? benchmark?.target : undefined;
     const targetText = target === undefined ? "—" : `${benchmark.direction === "lower" ? "≤" : "≥"} ${target}${metric.scale === "percentage" ? "%" : ""}`;
     const slice = [metric.language ? `lang: ${metric.language}` : "", metric.slice, metric.n ? `n=${metric.n}` : ""].filter(Boolean).join(" · ") || "—";
-    return `<tr><td><span class="model-name">${escapeHtml(shortModel(run.model.id))}</span><span class="model-revision">${escapeHtml(shortSha(run.model.revision))}</span></td><td><span class="cap-label">${escapeHtml(label(metric.capability))}</span><span class="benchmark">${escapeHtml(benchmark?.name || label(metric.benchmark))}</span><span class="metric">${escapeHtml(metric.metric)}</span></td><td>${escapeHtml(slice)}</td><td><span class="score">${escapeHtml(scoreText(metric))}</span></td><td>${escapeHtml(targetText)}</td><td><span class="pill ${escapeHtml(run.provenance.kind)}">${escapeHtml(label(run.provenance.kind))}</span><a class="source" href="${escapeHtml(run.provenance.source)}">source ↗</a></td></tr>`;
+    return `<tr><td><span class="model-name">${escapeHtml(shortModel(run.model.id))}</span><span class="model-revision">${escapeHtml(shortSha(run.model.revision))}</span></td><td><span class="cap-label">${escapeHtml(label(metric.capability))}</span><span class="benchmark">${escapeHtml(benchmark?.name || label(metric.benchmark))}</span><span class="metric">${escapeHtml(metric.metric)}</span></td><td>${escapeHtml(slice)}</td><td><span class="score">${escapeHtml(scoreText(metric))}</span></td><td>${escapeHtml(targetText)}</td><td>${evidenceCell(run)}</td></tr>`;
   }).join("") : `<tr><td class="empty" colspan="6">No evidence matches these filters.</td></tr>`;
 }
 

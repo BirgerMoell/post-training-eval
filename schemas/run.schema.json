@@ -8,6 +8,8 @@
     "schema_version": {"const": 1},
     "run_id": {"type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]+$"},
     "status": {"enum": ["completed", "partial", "failed", "imported"]},
+    "diagnostic": {"type": "boolean", "description": "True for bounded stack-validation runs that must not be treated as release estimates."},
+    "limitations": {"type": "array", "items": {"type": "string"}},
     "model": {
       "type": "object",
       "required": ["id", "revision", "format"],
@@ -28,4 +30,3 @@
     }
   }
 }
-

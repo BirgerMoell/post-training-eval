@@ -57,6 +57,7 @@ tr:last-child td { border-bottom: 0; }
 .pill.imported-published { background: #ffe2d8; color: #7f2c10; }
 .pill.fresh-reproduced { background: #d8f0e8; color: #174d41; }
 .pill.compatibility-check { background: #e2e4ff; color: #343d82; }
+.pill.diagnostic { margin-left: 5px; background: #fff0bf; color: #6b4b00; }
 .source { display: block; margin-top: 7px; color: var(--muted); font-size: 11px; }
 .coverage { overflow-x: auto; display: grid; gap: 0; }
 .coverage-row { display: grid; grid-template-columns: minmax(250px, 1.6fr) repeat(9, minmax(80px, 1fr)); min-width: 1000px; border-bottom: 1px solid var(--line); }

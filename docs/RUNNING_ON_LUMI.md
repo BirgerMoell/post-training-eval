@@ -24,6 +24,8 @@ slurm/lumi_lm_eval.sbatch
 
 The job uses one MI250X GCD, BF16, batch size 1, native chat template, greedy harness defaults, logged samples, and offline Hugging Face caches. The limited score is only a diagnostic. Use the full `core` profile for a comparison or gate.
 
+Each diagnostic step defaults to `STEP_TIMEOUT=20m`, which leaves headroom for reasoning checkpoints with long generations. Some ROCm stacks can linger while destroying the model after lm-eval has atomically written its result; a timeout is accepted only when a `results_*.json` artifact exists. A timeout before that point fails the job.
+
 When comparing exactly one parent and candidate, `slurm/lumi_compare_smoke.sbatch` runs them sequentially in one allocation. This reduces queue submissions and guarantees the same container and environment:
 
 ```bash
