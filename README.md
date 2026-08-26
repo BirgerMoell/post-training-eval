@@ -95,6 +95,8 @@ The dashboard displays these results with a yellow **Diagnostic** badge. Quick r
 
 `oellm-eval` includes 438 task/language rows with several few-shot protocols and three mutually incompatible harness environments. `local-quick` keeps the official task registry but batches compatible rows so a 9B checkpoint is not reloaded hundreds of times. It is resumable, fixes batch size at one, uses the native chat template, and stops before free disk crosses the configured floor.
 
+For Evalchemy's custom chat benchmarks, `local-quick` uses a diagnostic adapter because upstream `--limit` only bounds lm-eval-style tasks. The adapter applies the requested question cap to chat-task loaders, limits repeated benchmarks to one pass, and records the policy in `manifest.json`. It caps GPQA Diamond and HumanEval generations at 1,024 tokens and other registered Evalchemy quick tasks at 2,048 tokens. HumanEval uses Evalchemy's native debug subset (two examples per available language) because it loads examples inline. These bounded settings make the run useful for early model comparison, but they are not protocol-compatible with full benchmark scores or release gates.
+
 ```bash
 PYTHONPATH=/path/to/oellm-eval pteval local-quick \
   --model /immutable/hf/snapshot \

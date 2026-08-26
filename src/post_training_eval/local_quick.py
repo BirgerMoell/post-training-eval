@@ -10,6 +10,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
+from .evalchemy_quick_adapter import LIMIT_ENV as EVALCHEMY_LIMIT_ENV
+from .evalchemy_quick_adapter import REPEAT_LIMIT_ENV as EVALCHEMY_REPEAT_LIMIT_ENV
+
 
 class LocalQuickError(ValueError):
     pass
@@ -20,6 +23,20 @@ class TaskSpec:
     task: str
     n_shot: int
     suite: str
+
+
+EVALCHEMY_REPEAT_LIMIT = 1
+EVALCHEMY_DEFAULT_MAX_TOKENS = 2048
+EVALCHEMY_MAX_TOKENS = {
+    "GPQADiamond": 1024,
+    "HumanEval": 1024,
+}
+
+
+def evalchemy_max_tokens(task: TaskSpec) -> int | None:
+    if task.suite != "evalchemy":
+        return None
+    return EVALCHEMY_MAX_TOKENS.get(task.task, EVALCHEMY_DEFAULT_MAX_TOKENS)
 
 
 def _now() -> str:
@@ -33,13 +50,13 @@ def _chunks(values: Sequence[TaskSpec], size: int) -> list[list[TaskSpec]]:
 
 
 def batch_tasks(tasks: Iterable[TaskSpec], max_tasks_per_invocation: int = 32) -> list[list[TaskSpec]]:
-    """Group only tasks with the same harness and few-shot protocol."""
-    groups: dict[tuple[str, int], list[TaskSpec]] = {}
+    """Group only tasks with the same harness, few-shot protocol, and generation cap."""
+    groups: dict[tuple[str, int, int | None], list[TaskSpec]] = {}
     for task in tasks:
-        groups.setdefault((task.suite, task.n_shot), []).append(task)
+        groups.setdefault((task.suite, task.n_shot, evalchemy_max_tokens(task)), []).append(task)
     batches: list[list[TaskSpec]] = []
     suite_order = {"lm-eval-harness": 0, "lighteval": 1, "evalchemy": 2}
-    for key in sorted(groups, key=lambda item: (suite_order.get(item[0], 99), item[1])):
+    for key in sorted(groups, key=lambda item: (suite_order.get(item[0], 99), item[1], item[2] or 0)):
         batches.extend(_chunks(sorted(groups[key], key=lambda item: item.task), max_tasks_per_invocation))
     return batches
 
@@ -122,6 +139,10 @@ def build_evalchemy_command(
 ) -> list[str]:
     if not tasks:
         raise LocalQuickError("Evalchemy batches must be non-empty")
+    max_tokens = {evalchemy_max_tokens(task) for task in tasks}
+    if None in max_tokens or len(max_tokens) != 1:
+        raise LocalQuickError("Evalchemy batches must use one quick-generation token cap")
+    adapter = Path(__file__).with_name("evalchemy_quick_adapter.py")
     model_args = f"trust_remote_code=True,pretrained={model},dtype=bfloat16"
     if tokenizer:
         model_args += f",tokenizer={tokenizer}"
@@ -132,8 +153,7 @@ def build_evalchemy_command(
         "1",
         "--num-machines",
         "1",
-        "-m",
-        "eval.eval",
+        str(adapter),
         "--model",
         "hf",
         "--tasks",
@@ -146,6 +166,8 @@ def build_evalchemy_command(
         str(output),
         "--limit",
         str(limit),
+        "--max_tokens",
+        str(max_tokens.pop()),
         "--apply_chat_template",
         "--log_samples",
     ]
@@ -214,6 +236,16 @@ def run_local_quick(
             "started_at": _now(),
             "tasks": [asdict(task) for task in tasks],
             "batches": {},
+            "evalchemy_quick_policy": {
+                "question_limit": limit,
+                "repeat_limit": EVALCHEMY_REPEAT_LIMIT,
+                "max_new_tokens_by_task": {
+                    task.task: evalchemy_max_tokens(task)
+                    for task in tasks
+                    if task.suite == "evalchemy"
+                },
+                "human_eval_sampling": "upstream debug subset (two examples per available language)",
+            },
         }
 
     with (output_dir / "jobs.csv").open("w", newline="") as handle:
@@ -259,9 +291,20 @@ def run_local_quick(
             "command": command,
             "log": str(batch_dir / "runner.log"),
         }
+        batch_environment = environment.copy()
+        if suite == "evalchemy":
+            batch_environment.update({
+                EVALCHEMY_LIMIT_ENV: str(limit),
+                EVALCHEMY_REPEAT_LIMIT_ENV: str(EVALCHEMY_REPEAT_LIMIT),
+            })
+            manifest["batches"][batch_id]["diagnostic_policy"] = {
+                "question_limit": limit,
+                "repeat_limit": EVALCHEMY_REPEAT_LIMIT,
+                "max_new_tokens": evalchemy_max_tokens(batch[0]),
+            }
         _write_json(manifest_path, manifest)
         with (batch_dir / "runner.log").open("a") as log:
-            completed = subprocess.run(command, cwd=cwd, env=environment, stdout=log, stderr=subprocess.STDOUT, check=False)
+            completed = subprocess.run(command, cwd=cwd, env=batch_environment, stdout=log, stderr=subprocess.STDOUT, check=False)
         manifest["batches"][batch_id].update({
             "status": "completed" if completed.returncode == 0 else "failed",
             "returncode": completed.returncode,
