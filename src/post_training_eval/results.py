@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import csv
 import json
 import platform
+import re
 import shutil
 import subprocess
-import csv
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -134,6 +135,16 @@ def ingest_lm_eval(input_path: Path, model_id: str, run_id: str, model_revision:
                 })
                 break
     now = datetime.now(timezone.utc).isoformat()
+    sample_counts = raw.get("n-samples") or {}
+    limited_tasks = sorted(
+        task for task, counts in sample_counts.items()
+        if isinstance(counts, dict)
+        and isinstance(counts.get("original"), (int, float))
+        and isinstance(counts.get("effective"), (int, float))
+        and counts["effective"] < counts["original"]
+    )
+    configured_limit = (raw.get("config") or {}).get("limit")
+    diagnostic = configured_limit is not None or bool(limited_tasks)
     run = {
         "schema_version": 1,
         "run_id": run_id,
@@ -145,13 +156,17 @@ def ingest_lm_eval(input_path: Path, model_id: str, run_id: str, model_revision:
         "environment": {"platform": platform.platform(), "python": platform.python_version()},
         "metrics": metrics,
     }
+    if diagnostic:
+        run["diagnostic"] = True
+        detail = f"Configured per-task limit: {configured_limit}." if configured_limit is not None else f"Limited tasks: {', '.join(limited_tasks)}."
+        run["limitations"] = [f"Bounded diagnostic sample; {detail} Scores are directional and must not be used as release estimates."]
     errors = validate_result(run)
     if errors:
         raise ResultError("; ".join(errors))
     return run
 
 
-def ingest_oellm_csv(input_path: Path, model_id: str, run_id: str, model_revision: str | None, source_command: str | None, source_model: str | None = None) -> dict[str, Any]:
+def ingest_oellm_csv(input_path: Path, model_id: str, run_id: str, model_revision: str | None, source_command: str | None, source_model: str | None = None, diagnostic: bool = False) -> dict[str, Any]:
     with input_path.open(newline="") as handle:
         rows = list(csv.DictReader(handle))
     required = {"model_name", "task", "n_shot", "performance", "metric_name"}
@@ -199,6 +214,10 @@ def ingest_oellm_csv(input_path: Path, model_id: str, run_id: str, model_revisio
         "environment": {"platform": platform.platform(), "python": platform.python_version()},
         "metrics": metrics,
     }
+    diagnostic = diagnostic or bool(source_command and re.search(r"(?:^|\s)--limit(?:\s|=)", source_command))
+    if diagnostic:
+        run["diagnostic"] = True
+        run["limitations"] = ["Bounded quick-survey sample. Scores are directional and must not be used as release estimates or release-gate evidence."]
     errors = validate_result(run)
     if errors:
         raise ResultError("; ".join(errors))

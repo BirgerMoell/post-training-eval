@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "id": "quick",
+  "description": "Broad diagnostic survey: every task currently registered by oellm-eval, a small long-context matrix, and a stratified sample of every endpoint holdout bucket.",
+  "diagnostic": true,
+  "coverage": "All operational local task groups are sampled. External adapters, gated tasks, and leaderboard submissions remain explicit gaps.",
+  "steps": [
+    {
+      "id": "checkpoint",
+      "capability": "efficiency-release",
+      "driver": "inspect",
+      "required": true
+    },
+    {
+      "id": "all-oellm-tasks-quick",
+      "capabilities": ["multilingual", "instruction-chat", "reasoning-knowledge", "coding"],
+      "driver": "oellm-eval",
+      "task_groups": ["all"],
+      "limit": 8,
+      "required": true,
+      "notes": "The cap is applied independently to every expanded task, so small datasets are not crowded out by large ones."
+    },
+    {
+      "id": "long-context-quick",
+      "capability": "long-context",
+      "driver": "builtin-niah",
+      "lengths": [4096, 32768, 131072, 262000],
+      "depths": [50],
+      "required": true
+    },
+    {
+      "id": "capability-holdouts-quick",
+      "capabilities": ["safety", "multilingual", "instruction-chat", "reasoning-knowledge", "grounding-rag", "tools-agents", "long-context"],
+      "driver": "openai-endpoint",
+      "suite": "oellm-eu-eval-holdouts-v1",
+      "samples_per_bucket": 2,
+      "required": false,
+      "notes": "Runs two deterministic examples from each of the ten holdout buckets when the checkpoint is served through an OpenAI-compatible endpoint."
+    },
+    {
+      "id": "external-coverage-gaps",
+      "capabilities": ["safety", "instruction-chat", "long-context", "tools-agents", "efficiency-release"],
+      "driver": "external",
+      "benchmarks": ["harmbench", "xstest", "strongreject", "arena-hard-eu", "lmarena-rank", "ruler", "oneruler", "bfcl", "tau2-bench", "browsecomp", "throughput", "time-to-first-token", "quantization-retention"],
+      "required": false,
+      "notes": "Quick mode reports these as missing; they need dedicated adapters, judges, deployment telemetry, or external submission."
+    }
+  ]
+}

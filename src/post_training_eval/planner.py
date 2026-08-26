@@ -37,21 +37,33 @@ def _command_for(step: dict[str, Any], ref: CheckpointRef, limit_override: int |
         return ["python3", "-m", "post_training_eval.niah", "--model", model, "--lengths", ",".join(str(v) for v in step["lengths"]), "--depths", ",".join(str(v) for v in step["depths"]), "--out", "runs/raw/niah.json"]
     if driver == "openai-endpoint" and ref.format == "openai_endpoint":
         endpoint, _, endpoint_model = ref.location.partition("#")
-        return ["pteval", "endpoint-run", "--base-url", endpoint, "--model", endpoint_model, "--suite", step["suite"], "--out", "runs/raw/endpoint-holdouts.json"]
+        command = ["pteval", "endpoint-run", "--base-url", endpoint, "--model", endpoint_model, "--suite", step["suite"], "--out", "runs/raw/endpoint-holdouts.json"]
+        if step.get("samples_per_bucket"):
+            command += ["--samples-per-bucket", str(step["samples_per_bucket"])]
+        elif limit:
+            command += ["--limit", str(limit)]
+        return command
     return None
 
 
 def build_plan(ref: CheckpointRef, profile_name: str, limit: int | None = None, venv_path: str | None = None) -> dict[str, Any]:
+    if limit is not None and limit <= 0:
+        raise ValueError("limit must be positive")
     profile = load_profile(profile_name)
     steps = []
     for step in profile["steps"]:
         item = dict(step)
         command = _command_for(item, ref, limit, venv_path)
+        if profile.get("diagnostic"):
+            item["diagnostic"] = True
         item["command"] = command
         item["command_display"] = shlex.join(command) if command else None
         item["runnable"] = command is not None and not (ref.format == "megatron" and item["driver"] not in {"inspect"})
         if ref.format == "megatron" and item["driver"] != "inspect":
             item["blocked_by"] = "Prepare the Megatron checkpoint as HF, or serve it and use openai://BASE_URL#MODEL."
+        elif ref.format == "openai_endpoint" and item["driver"] not in {"inspect", "openai-endpoint", "external"}:
+            item["blocked_by"] = "This runner requires local HF weights. Plan against the downloaded checkpoint for oellm-eval and NIAH coverage."
+            item["runnable"] = False
         elif item["driver"] == "openai-endpoint" and ref.format != "openai_endpoint":
             item["blocked_by"] = "Serve this checkpoint behind an OpenAI-compatible endpoint, then plan with openai://BASE_URL#MODEL."
         elif item["driver"] == "oellm-eval" and ref.format == "hf_hub" and ref.revision:
@@ -62,7 +74,12 @@ def build_plan(ref: CheckpointRef, profile_name: str, limit: int | None = None, 
         "schema_version": 1,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "model": {"format": ref.format, "location": ref.location, "revision": ref.revision},
-        "profile": {"id": profile["id"], "description": profile["description"]},
+        "profile": {
+            "id": profile["id"],
+            "description": profile["description"],
+            "diagnostic": bool(profile.get("diagnostic")),
+            "coverage": profile.get("coverage"),
+        },
         "steps": steps,
     }
 

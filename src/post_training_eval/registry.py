@@ -68,9 +68,10 @@ def validate_registry(root: Path | None = None) -> list[str]:
     for profile_path in sorted((base / "profiles").glob("*.json")):
         profile = load_json(profile_path)
         for step in profile.get("steps", []):
-            if step.get("capability") not in ids:
-                errors.append(f"{profile_path.name}: unknown capability {step.get('capability')}")
+            step_capabilities = step.get("capabilities") or [step.get("capability")]
+            for capability in step_capabilities:
+                if capability not in ids:
+                    errors.append(f"{profile_path.name}: unknown capability {capability}")
             if step.get("driver") not in {"inspect", "oellm-eval", "lm-eval", "builtin-niah", "external", "openai-endpoint"}:
                 errors.append(f"{profile_path.name}: unknown driver {step.get('driver')}")
     return errors
-

@@ -1,6 +1,7 @@
 """Small OpenAI-compatible runner for the OpenEuroLLM multilingual holdout contract."""
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import urllib.request
@@ -73,11 +74,42 @@ def _rows(source: str) -> list[dict[str, Any]]:
     return [json.loads(line) for line in text.splitlines() if line.strip()]
 
 
-def run_endpoint(base_url: str, model: str, suite: str, out: Path, data: str | None, limit: int | None, api_key: str | None) -> dict[str, Any]:
+def _sample_by_bucket(rows: list[dict[str, Any]], samples_per_bucket: int) -> list[dict[str, Any]]:
+    if samples_per_bucket <= 0:
+        raise ValueError("samples_per_bucket must be positive")
+    by_bucket: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
+    for row in rows:
+        by_bucket[row["bucket"]][row.get("language", "unknown")].append(row)
+    selected = []
+    for bucket in sorted(by_bucket):
+        by_language = by_bucket[bucket]
+        for candidates in by_language.values():
+            candidates.sort(key=lambda row: row.get("id", ""))
+        languages = sorted(by_language)
+        offset = int(hashlib.sha256(bucket.encode()).hexdigest()[:8], 16) % len(languages)
+        rotated = languages[offset:] + languages[:offset]
+        bucket_selected = 0
+        while bucket_selected < samples_per_bucket:
+            added = False
+            for language in rotated:
+                if by_language[language]:
+                    selected.append(by_language[language].pop(0))
+                    bucket_selected += 1
+                    added = True
+                    if bucket_selected == samples_per_bucket:
+                        break
+            if not added:
+                break
+    return selected
+
+
+def run_endpoint(base_url: str, model: str, suite: str, out: Path, data: str | None, limit: int | None, api_key: str | None, samples_per_bucket: int | None = None) -> dict[str, Any]:
     if suite != "oellm-eu-eval-holdouts-v1":
         raise ValueError(f"Unknown endpoint suite: {suite}")
     rows = _rows(data or DEFAULT_DATA)
-    if limit:
+    if samples_per_bucket:
+        rows = _sample_by_bucket(rows, samples_per_bucket)
+    elif limit:
         rows = rows[:limit]
     by_bucket: dict[str, list[bool]] = defaultdict(list)
     by_language: dict[str, list[bool]] = defaultdict(list)
@@ -96,8 +128,7 @@ def run_endpoint(base_url: str, model: str, suite: str, out: Path, data: str | N
         by_language[row.get("language", "unknown")].append(passed)
         examples.append({"id": row.get("id"), "bucket": row["bucket"], "language": row.get("language"), "passed": passed, "answer": answer})
     accuracy = lambda values: round(100 * sum(values) / len(values), 4) if values else None
-    report = {"schema_version": 1, "model": model, "endpoint": base_url, "suite": suite, "n": len(rows), "overall_accuracy": accuracy([item for values in by_bucket.values() for item in values]), "by_bucket": {key: accuracy(value) for key, value in sorted(by_bucket.items())}, "by_language": {key: accuracy(value) for key, value in sorted(by_language.items())}, "examples": examples}
+    report = {"schema_version": 1, "model": model, "endpoint": base_url, "suite": suite, "n": len(rows), "sampling": {"kind": "per-bucket" if samples_per_bucket else ("head-limit" if limit else "full"), "limit": limit, "samples_per_bucket": samples_per_bucket}, "overall_accuracy": accuracy([item for values in by_bucket.values() for item in values]), "by_bucket": {key: accuracy(value) for key, value in sorted(by_bucket.items())}, "by_language": {key: accuracy(value) for key, value in sorted(by_language.items())}, "examples": examples}
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     return report
-

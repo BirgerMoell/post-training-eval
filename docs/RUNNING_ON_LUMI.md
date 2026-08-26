@@ -2,6 +2,24 @@
 
 The repository profiles use the official `oellm-eval` scheduler for normal runs. `slurm/lumi_lm_eval.sbatch` is a deliberately small direct harness job for checking a checkpoint and the local software stack before scheduling the wider task groups.
 
+## Broad quick survey
+
+Generate the diagnostic all-task plan against an immutable local HF snapshot:
+
+```bash
+pteval plan \
+  --model /scratch/.../immutable-hf-checkpoint \
+  --quick \
+  --venv-path /scratch/.../oellm-eval-venv \
+  --output runs/model-quick-plan.json
+
+pteval run --plan runs/model-quick-plan.json
+```
+
+The dry run prints an `oellm-eval schedule --task_groups all --limit 8` command. Run that scheduler command from the login node after pre-downloading the required datasets. The NIAH command needs GPU compute and must be run inside an allocation or submitted as its own batch job; do not execute model inference on the login node. Endpoint holdouts are planned separately when the checkpoint is served as `openai://BASE_URL#MODEL`.
+
+Quick mode can expand to many small jobs because the limit applies to every task-language combination. Check the generated job count, account quota, and estimated allocation before confirming submission.
+
 ## Diagnostic comparison of two checkpoints
 
 ```bash

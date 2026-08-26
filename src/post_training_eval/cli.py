@@ -37,8 +37,10 @@ def build_parser() -> argparse.ArgumentParser:
     prepare_p.add_argument("--output")
     plan_p = sub.add_parser("plan", help="Resolve a capability profile to concrete runner commands")
     plan_p.add_argument("--model", required=True)
-    plan_p.add_argument("--profile", choices=("smoke", "core", "release"), default="smoke")
-    plan_p.add_argument("--limit", type=int)
+    profile_selection = plan_p.add_mutually_exclusive_group()
+    profile_selection.add_argument("--profile", choices=("smoke", "quick", "core", "release"))
+    profile_selection.add_argument("--quick", action="store_true", help="Sample every operational task for a broad, diagnostic capability survey")
+    plan_p.add_argument("--limit", type=int, help="Override the quick/per-step example cap for lm-eval and oellm-eval tasks")
     plan_p.add_argument("--venv-path")
     plan_p.add_argument("--output")
     run_p = sub.add_parser("run", help="Execute runnable steps from a generated plan")
@@ -49,7 +51,9 @@ def build_parser() -> argparse.ArgumentParser:
     endpoint_p.add_argument("--model", required=True)
     endpoint_p.add_argument("--suite", default="oellm-eu-eval-holdouts-v1")
     endpoint_p.add_argument("--data")
-    endpoint_p.add_argument("--limit", type=int)
+    endpoint_sampling = endpoint_p.add_mutually_exclusive_group()
+    endpoint_sampling.add_argument("--limit", type=int)
+    endpoint_sampling.add_argument("--samples-per-bucket", type=int, help="Deterministically sample this many examples from every capability bucket")
     endpoint_p.add_argument("--api-key-env", default="OPENAI_API_KEY")
     endpoint_p.add_argument("--out", required=True)
     ingest_p = sub.add_parser("ingest-lm-eval", help="Normalize an lm-evaluation-harness results JSON")
@@ -66,6 +70,7 @@ def build_parser() -> argparse.ArgumentParser:
     collect_p.add_argument("--source-model", help="Exact model_name to select when the CSV contains multiple models")
     collect_p.add_argument("--run-id", required=True)
     collect_p.add_argument("--source-command")
+    collect_p.add_argument("--diagnostic", action="store_true", help="Mark bounded/quick collector output as non-release evidence")
     collect_p.add_argument("--output", required=True)
     publish_p = sub.add_parser("publish", help="Validate a run, add it to the registry, rebuild Pages data, optionally push")
     publish_p.add_argument("--run", required=True)
@@ -88,13 +93,16 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "prepare-megatron":
             _write(prepare_megatron(Path(args.config), args.execute), args.output)
         elif args.command == "plan":
-            plan = build_plan(parse_checkpoint(args.model), args.profile, args.limit, args.venv_path)
+            profile = "quick" if args.quick else (args.profile or "smoke")
+            plan = build_plan(parse_checkpoint(args.model), profile, args.limit, args.venv_path)
             if args.output:
                 write_plan(plan, Path(args.output))
             else:
                 _write(plan, None)
         elif args.command == "run":
             plan = json.loads(Path(args.plan).read_text())
+            if plan.get("profile", {}).get("diagnostic"):
+                print("DIAGNOSTIC quick survey: bounded scores are directional only and cannot satisfy release gates.")
             for step in plan["steps"]:
                 command = step.get("command")
                 if not command or not step.get("runnable"):
@@ -107,13 +115,13 @@ def main(argv: list[str] | None = None) -> int:
                 print("Dry run only. Add --execute to launch runnable steps.")
         elif args.command == "endpoint-run":
             import os
-            report = run_endpoint(args.base_url, args.model, args.suite, Path(args.out), args.data, args.limit, os.environ.get(args.api_key_env))
+            report = run_endpoint(args.base_url, args.model, args.suite, Path(args.out), args.data, args.limit, os.environ.get(args.api_key_env), args.samples_per_bucket)
             print(json.dumps({key: report[key] for key in ("model", "suite", "n", "overall_accuracy")}, indent=2))
         elif args.command == "ingest-lm-eval":
             run = ingest_lm_eval(Path(args.input), args.model_id, args.run_id, args.model_revision, args.source_command)
             _write(run, args.output)
         elif args.command == "ingest-oellm-csv":
-            run = ingest_oellm_csv(Path(args.input), args.model_id, args.run_id, args.model_revision, args.source_command, args.source_model)
+            run = ingest_oellm_csv(Path(args.input), args.model_id, args.run_id, args.model_revision, args.source_command, args.source_model, args.diagnostic)
             _write(run, args.output)
         elif args.command == "publish":
             root = repository_root()

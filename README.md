@@ -35,6 +35,42 @@ pteval run --plan runs/sft-smoke-plan.json
 
 The last command is a dry run. Add `--execute` only on a configured machine or cluster.
 
+## Quick capability survey
+
+Use `--quick` when you want a broad first impression before paying for full evaluation:
+
+```bash
+pteval plan \
+  --model /immutable/path/to/hf-checkpoint \
+  --quick \
+  --venv-path /path/to/oellm-eval-venv \
+  --output runs/model-quick-plan.json
+
+pteval run --plan runs/model-quick-plan.json
+pteval run --plan runs/model-quick-plan.json --execute
+```
+
+Quick mode expands the official `oellm-eval` `all` group and evaluates up to eight examples **per task**, rather than taking eight examples from the suite as a whole. This gives every registered multilingual, knowledge, reasoning, instruction, and coding task a small signal. It also plans one NIAH probe at 4K, 32K, 128K, and 262K, plus two deterministic examples from every multilingual holdout bucket when the model is available through an OpenAI-compatible endpoint.
+
+Override the per-task cap with `--limit 4` or `--limit 16`. The default is intended as a broad survey, not a five-minute smoke test; the expanded `all` group contains many language-task combinations. Missing external adapters, gated evaluations, deployment measurements, and leaderboard submissions remain visible in the plan.
+
+After collecting quick `oellm-eval` output, preserve the diagnostic label when normalizing it:
+
+```bash
+oellm-eval collect --results_dir oellm-output/QUICK_RUN --output_csv runs/quick.csv
+pteval ingest-oellm-csv \
+  --input runs/quick.csv \
+  --source-model /immutable/path/to/hf-checkpoint \
+  --model-id owner/model \
+  --model-revision COMMIT_SHA \
+  --run-id model-quick-YYYY-MM-DD \
+  --source-command "oellm-eval schedule --task_groups all --limit 8" \
+  --diagnostic \
+  --output runs/model-quick.json
+```
+
+The dashboard displays these results with a yellow **Diagnostic** badge. Quick results are useful for triage and parent comparisons, but cannot satisfy release gates.
+
 ## Run on LUMI with `oellm-eval`
 
 Install the OpenEuroLLM scheduler in the login-node environment and point `HF_HOME` at the shared cache:
@@ -75,6 +111,7 @@ The converter is passed an argument array without a shell. After conversion, the
 ## Profiles
 
 - `smoke` — checkpoint, 16-example reasoning/instruction and three-language multilingual stack check, 4K NIAH. Diagnostic only.
+- `quick` / `--quick` — every registered `oellm-eval` task with a small per-task cap, four context lengths, and stratified endpoint holdouts. Diagnostic only.
 - `core` — the per-checkpoint development suite and retention gate.
 - `release` — full multilingual coverage plus required external safety, arena, agent, long-context, and efficiency evidence.
 
