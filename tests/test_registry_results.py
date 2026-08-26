@@ -17,6 +17,13 @@ class RegistryResultTests(unittest.TestCase):
         self.assertEqual(validate_registry(), [])
         self.assertIn("ifeval", benchmark_index())
 
+    def test_every_evaluation_has_a_readable_source(self):
+        benchmarks = benchmark_index()
+        self.assertEqual(len(benchmarks), 62)
+        self.assertTrue(all(item.get("sources") for item in benchmarks.values()))
+        self.assertTrue(all(source["url"].startswith("https://") for item in benchmarks.values() for source in item["sources"]))
+        self.assertGreaterEqual(len(benchmarks["maxife"]["sources"]), 2)
+
     def test_plan_preserves_external_gaps(self):
         plan = build_plan(parse_checkpoint("birgermoell/oellm-9b-256k-sft"), "smoke", 3)
         self.assertTrue(any(step["runnable"] for step in plan["steps"]))

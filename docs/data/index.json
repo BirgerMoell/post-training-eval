@@ -38,7 +38,13 @@
           "stretch": 80,
           "runner": "oellm-eval",
           "group": "reasoning",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/livecodebench/code_generation_lite"
+            }
+          ]
         },
         {
           "id": "humaneval",
@@ -49,7 +55,13 @@
           "stretch": 85,
           "runner": "oellm-eval",
           "group": "reasoning",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Benchmark & data",
+              "url": "https://github.com/openai/human-eval"
+            }
+          ]
         },
         {
           "id": "mbpp",
@@ -60,7 +72,13 @@
           "stretch": 80,
           "runner": "oellm-eval",
           "group": "reasoning",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/google-research-datasets/mbpp"
+            }
+          ]
         },
         {
           "id": "defect-repair-eu",
@@ -70,7 +88,13 @@
           "target": 70,
           "stretch": 85,
           "runner": "openai-endpoint",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Evaluation contract",
+              "url": "https://github.com/BirgerMoell/post-training-data/blob/main/capabilities/coding/evaluation.json"
+            }
+          ]
         }
       ]
     },
@@ -90,7 +114,13 @@
           "target": 100,
           "stretch": 100,
           "runner": "inspect",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Evaluation contract",
+              "url": "https://github.com/BirgerMoell/post-training-eval/blob/main/capabilities/efficiency-release/suite.json"
+            }
+          ]
         },
         {
           "id": "throughput",
@@ -100,7 +130,13 @@
           "target": 15,
           "stretch": 30,
           "runner": "external",
-          "status": "adapter-required"
+          "status": "adapter-required",
+          "sources": [
+            {
+              "label": "Evaluation contract",
+              "url": "https://github.com/BirgerMoell/post-training-eval/blob/main/capabilities/efficiency-release/suite.json"
+            }
+          ]
         },
         {
           "id": "time-to-first-token",
@@ -110,7 +146,13 @@
           "target": 2000,
           "stretch": 1000,
           "runner": "external",
-          "status": "adapter-required"
+          "status": "adapter-required",
+          "sources": [
+            {
+              "label": "Evaluation contract",
+              "url": "https://github.com/BirgerMoell/post-training-eval/blob/main/capabilities/efficiency-release/suite.json"
+            }
+          ]
         },
         {
           "id": "quantization-retention",
@@ -120,7 +162,13 @@
           "target": 1,
           "stretch": 0.5,
           "runner": "external",
-          "status": "adapter-required"
+          "status": "adapter-required",
+          "sources": [
+            {
+              "label": "Evaluation contract",
+              "url": "https://github.com/BirgerMoell/post-training-eval/blob/main/capabilities/efficiency-release/suite.json"
+            }
+          ]
         },
         {
           "id": "release-completeness",
@@ -130,7 +178,13 @@
           "target": 100,
           "stretch": 100,
           "runner": "inspect",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Evaluation contract",
+              "url": "https://github.com/BirgerMoell/post-training-eval/blob/main/capabilities/efficiency-release/suite.json"
+            }
+          ]
         }
       ]
     },
@@ -151,7 +205,12 @@
           "stretch": 85,
           "runner": "openai-endpoint",
           "status": "operational",
-          "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+            }
+          ]
         },
         {
           "id": "ragas-faithfulness",
@@ -162,7 +221,12 @@
           "stretch": 90,
           "runner": "external",
           "status": "adapter-required",
-          "url": "https://docs.ragas.io/"
+          "sources": [
+            {
+              "label": "Metric documentation",
+              "url": "https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/faithfulness/"
+            }
+          ]
         },
         {
           "id": "citation-correctness-eu",
@@ -172,7 +236,13 @@
           "target": 75,
           "stretch": 90,
           "runner": "openai-endpoint",
-          "status": "planned"
+          "status": "planned",
+          "sources": [
+            {
+              "label": "Dataset contract",
+              "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+            }
+          ]
         },
         {
           "id": "insufficient-evidence-eu",
@@ -182,7 +252,13 @@
           "target": 80,
           "stretch": 92,
           "runner": "openai-endpoint",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+            }
+          ]
         }
       ]
     },
@@ -203,7 +279,13 @@
           "stretch": 90,
           "runner": "oellm-eval",
           "group": "reasoning",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/google/IFEval"
+            }
+          ]
         },
         {
           "id": "ifbench",
@@ -213,17 +295,33 @@
           "target": 60,
           "stretch": 76,
           "runner": "external",
-          "status": "adapter-required"
+          "status": "adapter-required",
+          "sources": [
+            {
+              "label": "Benchmark & data",
+              "url": "https://github.com/allenai/IFBench"
+            }
+          ]
         },
         {
           "id": "maxife",
-          "name": "MultiChallenge/MAXIFE",
+          "name": "MultiChallenge/MaXIFE",
           "metric": "accuracy",
           "direction": "higher",
           "target": 80,
           "stretch": 88,
           "runner": "external",
-          "status": "adapter-required"
+          "status": "adapter-required",
+          "sources": [
+            {
+              "label": "MultiChallenge dataset",
+              "url": "https://huggingface.co/datasets/ScaleAI/MultiChallenge"
+            },
+            {
+              "label": "MaXIFE data & runner",
+              "url": "https://github.com/OPPO-Mente-Lab/MaXIFE"
+            }
+          ]
         },
         {
           "id": "arena-hard-eu",
@@ -233,7 +331,12 @@
           "target": 50,
           "runner": "external",
           "status": "adapter-required",
-          "url": "https://huggingface.co/datasets/openeurollm/ArenaHard-EU-v0"
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/openeurollm/ArenaHard-EU-v0"
+            }
+          ]
         },
         {
           "id": "lmarena-rank",
@@ -243,7 +346,13 @@
           "target": 200,
           "stretch": 50,
           "runner": "external",
-          "status": "submission-required"
+          "status": "submission-required",
+          "sources": [
+            {
+              "label": "Live leaderboard",
+              "url": "https://arena.ai/leaderboard"
+            }
+          ]
         },
         {
           "id": "oellm-instruction-holdouts",
@@ -254,7 +363,12 @@
           "stretch": 90,
           "runner": "openai-endpoint",
           "status": "operational",
-          "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+            }
+          ]
         }
       ]
     },
@@ -274,7 +388,13 @@
           "target": 95,
           "stretch": 100,
           "runner": "builtin-niah",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Built-in protocol & generator",
+              "url": "https://github.com/BirgerMoell/post-training-eval/blob/main/src/post_training_eval/niah.py"
+            }
+          ]
         },
         {
           "id": "niah-exact-format",
@@ -284,7 +404,13 @@
           "target": 95,
           "stretch": 100,
           "runner": "builtin-niah",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Built-in protocol & generator",
+              "url": "https://github.com/BirgerMoell/post-training-eval/blob/main/src/post_training_eval/niah.py"
+            }
+          ]
         },
         {
           "id": "ruler",
@@ -294,7 +420,12 @@
           "target": 95,
           "runner": "external",
           "status": "adapter-required",
-          "url": "https://github.com/NVIDIA/RULER"
+          "sources": [
+            {
+              "label": "Benchmark & data",
+              "url": "https://github.com/NVIDIA/RULER"
+            }
+          ]
         },
         {
           "id": "oneruler",
@@ -305,7 +436,12 @@
           "stretch": 95,
           "runner": "external",
           "status": "operational",
-          "url": "https://github.com/OpenEuroLLM/OneRuler"
+          "sources": [
+            {
+              "label": "Benchmark & data",
+              "url": "https://github.com/mungg/OneRuler"
+            }
+          ]
         },
         {
           "id": "longbench",
@@ -315,7 +451,13 @@
           "target": 50,
           "stretch": 61,
           "runner": "external",
-          "status": "adapter-required"
+          "status": "adapter-required",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/THUDM/LongBench"
+            }
+          ]
         },
         {
           "id": "mrcr-128k",
@@ -325,7 +467,13 @@
           "target": 35,
           "stretch": 67,
           "runner": "external",
-          "status": "adapter-required"
+          "status": "adapter-required",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/openai/mrcr"
+            }
+          ]
         }
       ],
       "required_slices": [
@@ -355,7 +503,13 @@
           "stretch": 72,
           "runner": "oellm-eval",
           "group": "mmlu-prox-eu",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/li-lab/MMLU-ProX"
+            }
+          ]
         },
         {
           "id": "global-mmlu",
@@ -366,7 +520,13 @@
           "stretch": 82,
           "runner": "oellm-eval",
           "group": "global-mmlu-eu",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/CohereForAI/Global-MMLU"
+            }
+          ]
         },
         {
           "id": "sib-200",
@@ -377,7 +537,13 @@
           "stretch": 90,
           "runner": "oellm-eval",
           "group": "sib200-eu",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/Davlan/sib200"
+            }
+          ]
         },
         {
           "id": "belebele",
@@ -388,7 +554,13 @@
           "stretch": 85,
           "runner": "oellm-eval",
           "group": "belebele-eu-5-shot",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/facebook/belebele"
+            }
+          ]
         },
         {
           "id": "flores-200",
@@ -399,7 +571,13 @@
           "stretch": 65,
           "runner": "oellm-eval",
           "group": "flores-200-eu-to-eng,flores-200-eng-to-eu",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/facebook/flores"
+            }
+          ]
         },
         {
           "id": "include",
@@ -410,7 +588,13 @@
           "stretch": 82,
           "runner": "oellm-eval",
           "group": "include",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/CohereForAI/include-base-44"
+            }
+          ]
         },
         {
           "id": "eu-language-fidelity",
@@ -419,7 +603,13 @@
           "direction": "higher",
           "target": 98,
           "runner": "openai-endpoint",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+            }
+          ]
         },
         {
           "id": "xwinograd",
@@ -430,7 +620,13 @@
           "stretch": 80,
           "runner": "oellm-eval",
           "group": "generic-multilingual",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/Muennighoff/xwinograd"
+            }
+          ]
         },
         {
           "id": "xcopa",
@@ -441,7 +637,13 @@
           "stretch": 85,
           "runner": "oellm-eval",
           "group": "generic-multilingual",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/cambridgeltl/xcopa"
+            }
+          ]
         },
         {
           "id": "xstorycloze",
@@ -452,7 +654,13 @@
           "stretch": 85,
           "runner": "oellm-eval",
           "group": "generic-multilingual",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/juletxara/xstory_cloze"
+            }
+          ]
         },
         {
           "id": "xcsqa",
@@ -463,7 +671,13 @@
           "stretch": 72,
           "runner": "oellm-eval",
           "group": "xcsqa-eu",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/INK-USC/xcsr"
+            }
+          ]
         },
         {
           "id": "paws-x",
@@ -474,7 +688,13 @@
           "stretch": 92,
           "runner": "oellm-eval",
           "group": "pawsx-eu",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/google-research-datasets/paws-x"
+            }
+          ]
         },
         {
           "id": "xnli",
@@ -485,7 +705,13 @@
           "stretch": 88,
           "runner": "oellm-eval",
           "group": "xnli-eu",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/facebook/xnli"
+            }
+          ]
         },
         {
           "id": "opensubtitles-multi40",
@@ -496,7 +722,13 @@
           "stretch": 40,
           "runner": "oellm-eval",
           "group": "opensubtitles-eu-en-xx,opensubtitles-eu-xx-en",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/Helsinki-NLP/OpenSubtitles2024-40-langs-15-movies"
+            }
+          ]
         },
         {
           "id": "arc-challenge-mt",
@@ -507,7 +739,13 @@
           "stretch": 65,
           "runner": "oellm-eval",
           "group": "arc-challenge-mt-eu",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/LumiOpen/arc_challenge_mt"
+            }
+          ]
         },
         {
           "id": "global-piqa",
@@ -518,7 +756,13 @@
           "stretch": 83,
           "runner": "oellm-eval",
           "group": "global-piqa-eu-completions,global-piqa-eu-prompted",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/mrlbenchmarks/global-piqa-nonparallel"
+            }
+          ]
         }
       ],
       "required_aggregations": [
@@ -548,7 +792,13 @@
           "stretch": 90,
           "runner": "oellm-eval",
           "group": "reasoning",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/openai/gsm8k"
+            }
+          ]
         },
         {
           "id": "arc-challenge",
@@ -559,7 +809,13 @@
           "stretch": 75,
           "runner": "oellm-eval",
           "group": "reasoning",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/allenai/ai2_arc"
+            }
+          ]
         },
         {
           "id": "mgsm",
@@ -570,7 +826,13 @@
           "stretch": 92,
           "runner": "oellm-eval",
           "group": "mgsm-eu",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/jbross-ibm-research/mgsm"
+            }
+          ]
         },
         {
           "id": "polymath",
@@ -581,7 +843,13 @@
           "stretch": 72,
           "runner": "oellm-eval",
           "group": "polymath-eu-low,polymath-eu-medium,polymath-eu-high,polymath-eu-top",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/Qwen/PolyMath"
+            }
+          ]
         },
         {
           "id": "mmlu-college-cs",
@@ -591,7 +859,13 @@
           "target": 65,
           "stretch": 75,
           "runner": "lm-eval",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/cais/mmlu"
+            }
+          ]
         },
         {
           "id": "math-500",
@@ -602,7 +876,13 @@
           "stretch": 90,
           "runner": "oellm-eval",
           "group": "reasoning",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/HuggingFaceH4/MATH-500"
+            }
+          ]
         },
         {
           "id": "gpqa-diamond",
@@ -613,7 +893,13 @@
           "stretch": 60,
           "runner": "oellm-eval",
           "group": "reasoning",
-          "status": "license-gated"
+          "status": "license-gated",
+          "sources": [
+            {
+              "label": "Gated dataset",
+              "url": "https://huggingface.co/datasets/Idavidrein/gpqa"
+            }
+          ]
         },
         {
           "id": "oellm-reasoning-holdouts",
@@ -624,7 +910,12 @@
           "stretch": 85,
           "runner": "openai-endpoint",
           "status": "operational",
-          "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+            }
+          ]
         },
         {
           "id": "aime24",
@@ -635,7 +926,13 @@
           "stretch": 45,
           "runner": "oellm-eval",
           "group": "reasoning",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Runner-bundled data",
+              "url": "https://github.com/Ali-Elganzory/evalchemy/blob/7ae5a38f7f9d062d84306473f8b0e8671cf0f552/eval/chat_benchmarks/AIME24/data/aime24.json"
+            }
+          ]
         },
         {
           "id": "aime25",
@@ -646,7 +943,13 @@
           "stretch": 40,
           "runner": "oellm-eval",
           "group": "reasoning",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Runner-bundled data",
+              "url": "https://github.com/Ali-Elganzory/evalchemy/blob/7ae5a38f7f9d062d84306473f8b0e8671cf0f552/eval/chat_benchmarks/AIME25/data/aime25.json"
+            }
+          ]
         },
         {
           "id": "amc23",
@@ -657,7 +960,13 @@
           "stretch": 85,
           "runner": "oellm-eval",
           "group": "reasoning",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Runner-bundled data",
+              "url": "https://github.com/Ali-Elganzory/evalchemy/blob/7ae5a38f7f9d062d84306473f8b0e8671cf0f552/eval/chat_benchmarks/AMC23/data/amc23.json"
+            }
+          ]
         },
         {
           "id": "open-sci",
@@ -668,7 +977,13 @@
           "stretch": 75,
           "runner": "oellm-eval",
           "group": "open-sci-0.01",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Composite dataset manifest",
+              "url": "https://github.com/OpenEuroLLM/oellm-eval/blob/238bea9de31e5871472d26b40449cee0b2eb67cc/oellm/resources/task-groups.yaml#L372-L417"
+            }
+          ]
         },
         {
           "id": "dclm-core",
@@ -679,7 +994,13 @@
           "stretch": 70,
           "runner": "oellm-eval",
           "group": "dclm-core-22",
-          "status": "operational"
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Composite dataset manifest",
+              "url": "https://github.com/OpenEuroLLM/oellm-eval/blob/238bea9de31e5871472d26b40449cee0b2eb67cc/oellm/resources/task-groups.yaml#L636-L714"
+            }
+          ]
         }
       ]
     },
@@ -700,7 +1021,12 @@
           "stretch": 1,
           "runner": "external",
           "status": "adapter-required",
-          "url": "https://github.com/centerforaisafety/HarmBench"
+          "sources": [
+            {
+              "label": "Benchmark & data",
+              "url": "https://github.com/centerforaisafety/HarmBench"
+            }
+          ]
         },
         {
           "id": "xstest",
@@ -711,7 +1037,12 @@
           "stretch": 2,
           "runner": "external",
           "status": "adapter-required",
-          "url": "https://github.com/paul-rottger/exaggerated-safety"
+          "sources": [
+            {
+              "label": "Benchmark & data",
+              "url": "https://github.com/paul-rottger/exaggerated-safety"
+            }
+          ]
         },
         {
           "id": "strongreject",
@@ -722,7 +1053,16 @@
           "stretch": 3,
           "runner": "external",
           "status": "adapter-required",
-          "url": "https://strong-reject.readthedocs.io/"
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/AlignmentResearch/StrongREJECT"
+            },
+            {
+              "label": "Documentation",
+              "url": "https://strong-reject.readthedocs.io/"
+            }
+          ]
         },
         {
           "id": "oellm-safety-holdouts",
@@ -733,7 +1073,12 @@
           "stretch": 97,
           "runner": "openai-endpoint",
           "status": "operational",
-          "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+            }
+          ]
         }
       ],
       "required_slices": [
@@ -766,7 +1111,16 @@
           "stretch": 70,
           "runner": "external",
           "status": "adapter-required",
-          "url": "https://gorilla.cs.berkeley.edu/leaderboard.html"
+          "sources": [
+            {
+              "label": "Code & evaluation data",
+              "url": "https://github.com/ShishirPatil/gorilla/tree/main/berkeley-function-call-leaderboard"
+            },
+            {
+              "label": "Live leaderboard",
+              "url": "https://gorilla.cs.berkeley.edu/leaderboard.html"
+            }
+          ]
         },
         {
           "id": "tau2-bench",
@@ -776,7 +1130,13 @@
           "target": 65,
           "stretch": 80,
           "runner": "external",
-          "status": "adapter-required"
+          "status": "adapter-required",
+          "sources": [
+            {
+              "label": "Benchmark & data",
+              "url": "https://github.com/sierra-research/tau2-bench"
+            }
+          ]
         },
         {
           "id": "browsecomp",
@@ -786,7 +1146,17 @@
           "target": 25,
           "stretch": 60,
           "runner": "external",
-          "status": "adapter-required"
+          "status": "adapter-required",
+          "sources": [
+            {
+              "label": "Encrypted data loader & runner",
+              "url": "https://github.com/openai/simple-evals/blob/main/browsecomp_eval.py"
+            },
+            {
+              "label": "Benchmark overview",
+              "url": "https://openai.com/index/browsecomp/"
+            }
+          ]
         },
         {
           "id": "oellm-tool-holdouts",
@@ -797,7 +1167,12 @@
           "stretch": 90,
           "runner": "openai-endpoint",
           "status": "operational",
-          "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+            }
+          ]
         }
       ]
     }
@@ -1164,7 +1539,7 @@
             },
             {
               "id": "maxife",
-              "name": "MultiChallenge/MAXIFE",
+              "name": "MultiChallenge/MaXIFE",
               "score": null,
               "measurement_count": 0,
               "evidence_runs": [],
@@ -2339,7 +2714,7 @@
             },
             {
               "id": "maxife",
-              "name": "MultiChallenge/MAXIFE",
+              "name": "MultiChallenge/MaXIFE",
               "score": null,
               "measurement_count": 0,
               "evidence_runs": [],

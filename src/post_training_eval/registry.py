@@ -68,6 +68,18 @@ def validate_registry(root: Path | None = None) -> list[str]:
                 errors.append(f"{benchmark_id}: missing numeric target")
             if benchmark.get("direction") not in {"higher", "lower"}:
                 errors.append(f"{benchmark_id}: direction must be higher or lower")
+            sources = benchmark.get("sources")
+            if not isinstance(sources, list) or not sources:
+                errors.append(f"{benchmark_id}: missing evaluation source")
+                continue
+            for index, source in enumerate(sources):
+                if not isinstance(source, dict):
+                    errors.append(f"{benchmark_id}: source {index + 1} must be an object")
+                    continue
+                if not isinstance(source.get("label"), str) or not source["label"].strip():
+                    errors.append(f"{benchmark_id}: source {index + 1} is missing a label")
+                if not isinstance(source.get("url"), str) or not source["url"].startswith("https://"):
+                    errors.append(f"{benchmark_id}: source {index + 1} must use an https URL")
     except RegistryError as exc:
         errors.append(str(exc))
     for profile_path in sorted((base / "profiles").glob("*.json")):

@@ -27,6 +27,24 @@ function lookupBenchmark(capability, benchmark) {
   return cap?.benchmarks.find(item => item.id === benchmark);
 }
 
+function benchmarkSources(benchmark) {
+  if (Array.isArray(benchmark?.sources)) return benchmark.sources;
+  return benchmark?.url ? [{ label: "Source", url: benchmark.url }] : [];
+}
+
+function benchmarkNameLink(benchmark, fallbackName = "") {
+  const name = benchmark?.name || fallbackName;
+  const primary = benchmarkSources(benchmark)[0];
+  if (!primary) return escapeHtml(name);
+  return `<a class="benchmark-name-link" href="${escapeHtml(primary.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(name)} <span aria-hidden="true">↗</span></a>`;
+}
+
+function benchmarkSourceLinks(benchmark) {
+  const sources = benchmarkSources(benchmark);
+  if (!sources.length) return "";
+  return `<span class="benchmark-source-links">${sources.map(source => `<a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.label)} ↗</a>`).join("")}</span>`;
+}
+
 function modelCapability(model, capabilityId) {
   return model.capability_scores.find(item => item.id === capabilityId);
 }
@@ -168,7 +186,7 @@ function renderCapabilityComparison() {
       const score = result?.score == null ? "—" : result.score.toFixed(1);
       return `<div class="capability-model-summary"><strong>${score}</strong><div class="score-track"><span style="width:${result?.score || 0}%"></span></div>${targetBadge(result?.target_status || "not-measured")}<small>${result?.benchmark_count || 0} scored evals</small></div>`;
     }).join("");
-    const benchmarks = capability.benchmarks.map(benchmark => `<div class="benchmark-row comparison-columns" style="--model-count:${models.length}"><div><strong>${escapeHtml(benchmark.name)}</strong><small>${escapeHtml(benchmark.metric)} · ${escapeHtml(targetThreshold(benchmark))}</small></div>${models.map(model => benchmarkCell(model, capability.id, benchmark)).join("")}</div>`).join("");
+    const benchmarks = capability.benchmarks.map(benchmark => `<div class="benchmark-row comparison-columns" style="--model-count:${models.length}"><div><strong>${benchmarkNameLink(benchmark)}</strong><small>${escapeHtml(benchmark.metric)} · ${escapeHtml(targetThreshold(benchmark))}</small>${benchmarkSourceLinks(benchmark)}</div>${models.map(model => benchmarkCell(model, capability.id, benchmark)).join("")}</div>`).join("");
     return `<details class="capability-comparison-row" id="capability-${escapeHtml(capability.id)}"><summary class="comparison-columns" style="--model-count:${models.length}"><div class="capability-title"><span>${escapeHtml(capability.name)}</span><small>${capability.benchmarks.length} registered evaluations</small></div>${modelSummaries}</summary><div class="benchmark-list">${benchmarks}<button class="evidence-button" type="button" data-capability="${escapeHtml(capability.id)}">Open evidence ledger</button></div></details>`;
   }).join("");
   document.querySelector("#capability-comparison").innerHTML = header + rows;
@@ -199,8 +217,7 @@ function renderCapabilities() {
     const targeted = cap.benchmarks.filter(item => item.target != null).length;
     const benchmarks = cap.benchmarks.map(item => {
       const target = item.target == null ? "no numeric target" : `target ${item.direction === "lower" ? "≤" : "≥"}${item.target}`;
-      const name = item.url ? `<a href="${escapeHtml(item.url)}">${escapeHtml(item.name)} ↗</a>` : escapeHtml(item.name);
-      return `<li><span>${name}<small>${escapeHtml(item.metric)} · ${escapeHtml(target)}</small></span><span class="status ${escapeHtml(item.status)}">${escapeHtml(label(item.status))}</span></li>`;
+      return `<li><span>${benchmarkNameLink(item)}<small>${escapeHtml(item.metric)} · ${escapeHtml(target)}</small>${benchmarkSourceLinks(item)}</span><span class="status ${escapeHtml(item.status)}">${escapeHtml(label(item.status))}</span></li>`;
     }).join("");
     return `<article class="capability-card"><span class="number">${String(index + 1).padStart(2, "0")}</span><h3>${escapeHtml(cap.name)}</h3><p>${escapeHtml(cap.question)}</p><div class="counts"><span>${operational} operational</span><span>${targeted} targets</span></div><details><summary>Evaluation contract</summary><ul>${benchmarks}</ul></details></article>`;
   }).join("");
@@ -232,7 +249,7 @@ function renderResults() {
     const target = status === "not-set" ? "—" : targetThreshold(benchmark);
     const gap = status === "not-set" ? null : targetGap(metric.value, benchmark);
     const slice = [metric.language ? `lang: ${metric.language}` : "", metric.slice, metric.n ? `n=${metric.n}` : ""].filter(Boolean).join(" · ") || "—";
-    return `<tr><td><span class="model-name">${escapeHtml(shortModel(run.model.id))}</span><span class="model-revision">${escapeHtml(shortSha(run.model.revision))}</span></td><td><span class="cap-label">${escapeHtml(label(metric.capability))}</span><span class="benchmark">${escapeHtml(benchmark?.name || label(metric.benchmark))}</span><span class="metric">${escapeHtml(metric.metric)}</span></td><td>${escapeHtml(slice)}</td><td><span class="score">${escapeHtml(scoreText(metric))}</span></td><td>${targetBadge(status)}<small class="target-threshold">${escapeHtml(target)}</small>${targetGapBadge(gap, benchmark?.direction, metric.scale, benchmark)}</td><td>${evidenceCell(run)}</td></tr>`;
+    return `<tr><td><span class="model-name">${escapeHtml(shortModel(run.model.id))}</span><span class="model-revision">${escapeHtml(shortSha(run.model.revision))}</span></td><td><span class="cap-label">${escapeHtml(label(metric.capability))}</span><span class="benchmark">${benchmarkNameLink(benchmark, label(metric.benchmark))}</span>${benchmarkSourceLinks(benchmark)}<span class="metric">${escapeHtml(metric.metric)}</span></td><td>${escapeHtml(slice)}</td><td><span class="score">${escapeHtml(scoreText(metric))}</span></td><td>${targetBadge(status)}<small class="target-threshold">${escapeHtml(target)}</small>${targetGapBadge(gap, benchmark?.direction, metric.scale, benchmark)}</td><td>${evidenceCell(run)}</td></tr>`;
   }).join("") : `<tr><td class="empty" colspan="6">No evidence matches these filters.</td></tr>`;
 }
 

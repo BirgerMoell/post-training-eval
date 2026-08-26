@@ -32,7 +32,7 @@ The installer refuses to overwrite an existing skill. Repository-scoped discover
 
 ## What is covered
 
-The nine capability folders are the source of truth: Safety, Multilingual, Instruction & Chat, Reasoning & Knowledge, Grounding & RAG, Tools & Agents, Long Context, Coding, and Efficiency & Release. Each `suite.json` records benchmark, metric, direction, target, runner, and implementation status.
+The nine capability folders are the source of truth: Safety, Multilingual, Instruction & Chat, Reasoning & Knowledge, Grounding & RAG, Tools & Agents, Long Context, Coding, and Efficiency & Release. Each `suite.json` records benchmark, metric, direction, target, runner, implementation status, and one or more labeled `sources`. The first source is the primary click-through location. Direct dataset pages are preferred; composite, generated, leaderboard, or internal evaluations link to their exact manifest, runner, or protocol instead.
 
 Every registered evaluation has a numeric release floor under [`program-floor-v1`](docs/TARGETS.md). The dashboard shows both target status and the exact direction-aware gap for every measured primary metric. These are versioned program targets and should be recalibrated only through review after a protocol-matched baseline sweep.
 

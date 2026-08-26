@@ -6,9 +6,9 @@
   "gate_policy": "execution_based_and_contamination_aware",
   "target_policy": "program-floor-v1",
   "benchmarks": [
-    {"id": "livecodebench", "name": "LiveCodeBench", "metric": "pass_at_1", "direction": "higher", "target": 55, "stretch": 80, "runner": "oellm-eval", "group": "reasoning", "status": "operational"},
-    {"id": "humaneval", "name": "HumanEval", "metric": "pass_at_1", "direction": "higher", "target": 70, "stretch": 85, "runner": "oellm-eval", "group": "reasoning", "status": "operational"},
-    {"id": "mbpp", "name": "MBPP", "metric": "pass_at_1", "direction": "higher", "target": 65, "stretch": 80, "runner": "oellm-eval", "group": "reasoning", "status": "operational"},
-    {"id": "defect-repair-eu", "name": "OpenEuroLLM defect repair", "metric": "tests_passed_rate", "direction": "higher", "target": 70, "stretch": 85, "runner": "openai-endpoint", "status": "operational"}
+    {"id": "livecodebench", "name": "LiveCodeBench", "metric": "pass_at_1", "direction": "higher", "target": 55, "stretch": 80, "runner": "oellm-eval", "group": "reasoning", "status": "operational", "sources": [{"label": "Dataset", "url": "https://huggingface.co/datasets/livecodebench/code_generation_lite"}]},
+    {"id": "humaneval", "name": "HumanEval", "metric": "pass_at_1", "direction": "higher", "target": 70, "stretch": 85, "runner": "oellm-eval", "group": "reasoning", "status": "operational", "sources": [{"label": "Benchmark & data", "url": "https://github.com/openai/human-eval"}]},
+    {"id": "mbpp", "name": "MBPP", "metric": "pass_at_1", "direction": "higher", "target": 65, "stretch": 80, "runner": "oellm-eval", "group": "reasoning", "status": "operational", "sources": [{"label": "Dataset", "url": "https://huggingface.co/datasets/google-research-datasets/mbpp"}]},
+    {"id": "defect-repair-eu", "name": "OpenEuroLLM defect repair", "metric": "tests_passed_rate", "direction": "higher", "target": 70, "stretch": 85, "runner": "openai-endpoint", "status": "operational", "sources": [{"label": "Evaluation contract", "url": "https://github.com/BirgerMoell/post-training-data/blob/main/capabilities/coding/evaluation.json"}]}
   ]
 }

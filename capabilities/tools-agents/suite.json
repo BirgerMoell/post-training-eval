@@ -6,9 +6,9 @@
   "gate_policy": "schema_validity_and_task_success",
   "target_policy": "program-floor-v1",
   "benchmarks": [
-    {"id": "bfcl", "name": "Berkeley Function Calling Leaderboard", "metric": "overall_accuracy", "direction": "higher", "target": 60, "stretch": 70, "runner": "external", "status": "adapter-required", "url": "https://gorilla.cs.berkeley.edu/leaderboard.html"},
-    {"id": "tau2-bench", "name": "tau2-bench", "metric": "pass_rate", "direction": "higher", "target": 65, "stretch": 80, "runner": "external", "status": "adapter-required"},
-    {"id": "browsecomp", "name": "BrowseComp", "metric": "accuracy", "direction": "higher", "target": 25, "stretch": 60, "runner": "external", "status": "adapter-required"},
-    {"id": "oellm-tool-holdouts", "name": "OpenEuroLLM multilingual tool-call holdouts", "metric": "sequence_exact_match", "direction": "higher", "target": 75, "stretch": 90, "runner": "openai-endpoint", "status": "operational", "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"}
+    {"id": "bfcl", "name": "Berkeley Function Calling Leaderboard", "metric": "overall_accuracy", "direction": "higher", "target": 60, "stretch": 70, "runner": "external", "status": "adapter-required", "sources": [{"label": "Code & evaluation data", "url": "https://github.com/ShishirPatil/gorilla/tree/main/berkeley-function-call-leaderboard"}, {"label": "Live leaderboard", "url": "https://gorilla.cs.berkeley.edu/leaderboard.html"}]},
+    {"id": "tau2-bench", "name": "tau2-bench", "metric": "pass_rate", "direction": "higher", "target": 65, "stretch": 80, "runner": "external", "status": "adapter-required", "sources": [{"label": "Benchmark & data", "url": "https://github.com/sierra-research/tau2-bench"}]},
+    {"id": "browsecomp", "name": "BrowseComp", "metric": "accuracy", "direction": "higher", "target": 25, "stretch": 60, "runner": "external", "status": "adapter-required", "sources": [{"label": "Encrypted data loader & runner", "url": "https://github.com/openai/simple-evals/blob/main/browsecomp_eval.py"}, {"label": "Benchmark overview", "url": "https://openai.com/index/browsecomp/"}]},
+    {"id": "oellm-tool-holdouts", "name": "OpenEuroLLM multilingual tool-call holdouts", "metric": "sequence_exact_match", "direction": "higher", "target": 75, "stretch": 90, "runner": "openai-endpoint", "status": "operational", "sources": [{"label": "Dataset", "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"}]}
   ]
 }
