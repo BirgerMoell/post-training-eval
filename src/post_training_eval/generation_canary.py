@@ -69,6 +69,9 @@ def run_generation_canary(
             return_tensors="pt",
             return_dict=True,
         ).to(loaded.device)
+        # Some generic fast-tokenizer views emit this Llama-style field even
+        # though Qwen causal-LM forwards do not accept it.
+        inputs.pop("token_type_ids", None)
         rendered = tokenizer.apply_chat_template(
             [{"role": "user", "content": prompt}],
             add_generation_prompt=True,
