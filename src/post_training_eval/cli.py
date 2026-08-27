@@ -12,6 +12,7 @@ from .registry import repository_root, validate_registry
 from .results import ResultError, git_publish, ingest_lm_eval, ingest_lm_eval_directory, ingest_oellm_csv, publish_run, validate_result, write_site_data
 from .holdouts import run_endpoint
 from .gates import compare_runs
+from .generation_canary import run_generation_canary
 from .local_quick import LocalQuickError, run_local_quick
 from .registry import load_json
 
@@ -57,11 +58,21 @@ def build_parser() -> argparse.ArgumentParser:
     local_p.add_argument("--evalchemy-dir")
     local_p.add_argument("--evalchemy-tokenizer")
     local_p.add_argument("--suite", action="append", choices=("lm-eval-harness", "lighteval", "evalchemy"))
-    local_p.add_argument("--limit", type=int, default=8)
+    local_p.add_argument("--limit", type=int, help="Examples per task (default: 8, or 2 with --fast)")
+    local_p.add_argument("--fast", action="store_true", help="Triage every task with two examples and short generation caps")
+    local_p.add_argument("--evalchemy-data-workers", type=int, default=4, help="Bound dataset preprocessing processes")
     local_p.add_argument("--gpu", default="0")
     local_p.add_argument("--max-tasks-per-invocation", type=int, default=32)
     local_p.add_argument("--min-free-gb", type=float, default=20)
     local_p.add_argument("--hf-home")
+    canary_p = sub.add_parser("canary", help="Check chat formatting, EOS stopping, and repetition before evaluation")
+    canary_p.add_argument("--model", required=True)
+    canary_p.add_argument("--tokenizer")
+    canary_p.add_argument("--prompt", action="append")
+    canary_p.add_argument("--max-new-tokens", type=int, default=128)
+    canary_p.add_argument("--decoding", choices=("greedy", "sampled", "both"), default="both")
+    canary_p.add_argument("--seed", type=int, default=20260828)
+    canary_p.add_argument("--output")
     endpoint_p = sub.add_parser("endpoint-run", help="Run multilingual holdouts against an OpenAI-compatible server")
     endpoint_p.add_argument("--base-url", required=True)
     endpoint_p.add_argument("--model", required=True)
@@ -137,6 +148,7 @@ def main(argv: list[str] | None = None) -> int:
             if not args.execute:
                 print("Dry run only. Add --execute to launch runnable steps.")
         elif args.command == "local-quick":
+            local_limit = args.limit if args.limit is not None else (2 if args.fast else 8)
             manifest = run_local_quick(
                 model=args.model,
                 output_dir=Path(args.output_dir),
@@ -147,13 +159,29 @@ def main(argv: list[str] | None = None) -> int:
                 evalchemy_dir=Path(args.evalchemy_dir) if args.evalchemy_dir else None,
                 evalchemy_tokenizer=args.evalchemy_tokenizer,
                 suites=args.suite or ("lm-eval-harness", "lighteval", "evalchemy"),
-                limit=args.limit,
+                limit=local_limit,
                 gpu=args.gpu,
                 max_tasks_per_invocation=args.max_tasks_per_invocation,
                 min_free_gb=args.min_free_gb,
                 hf_home=args.hf_home,
+                profile="fast" if args.fast else "quick",
+                evalchemy_data_workers=args.evalchemy_data_workers,
             )
             print(manifest)
+        elif args.command == "canary":
+            canary_kwargs = {
+                "model": args.model,
+                "tokenizer_path": args.tokenizer,
+                "max_new_tokens": args.max_new_tokens,
+                "decoding": args.decoding,
+                "seed": args.seed,
+                "output": Path(args.output) if args.output else None,
+            }
+            if args.prompt:
+                canary_kwargs["prompts"] = args.prompt
+            report = run_generation_canary(**canary_kwargs)
+            if not args.output:
+                print(json.dumps(report, indent=2, ensure_ascii=False))
         elif args.command == "endpoint-run":
             import os
             report = run_endpoint(args.base_url, args.model, args.suite, Path(args.out), args.data, args.limit, os.environ.get(args.api_key_env), args.samples_per_bucket)

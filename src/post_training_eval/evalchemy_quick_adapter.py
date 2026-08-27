@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import time
+from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
 from typing import Any, Callable
@@ -10,15 +11,31 @@ from typing import Any, Callable
 
 LIMIT_ENV = "PTEVAL_EVALCHEMY_QUESTION_LIMIT"
 REPEAT_LIMIT_ENV = "PTEVAL_EVALCHEMY_REPEAT_LIMIT"
+DATA_WORKERS_ENV = "PTEVAL_EVALCHEMY_DATA_WORKERS"
 FILELOCK_FORK_ERROR = "unsafe while filelock is changing descriptor ownership"
 HUMANEVAL_FORK_ATTEMPTS = 6
 HUMANEVAL_FORK_RETRY_SECONDS = 0.5
 
 
-def _bounded_questions(loader: Callable[..., Any], limit: int) -> Callable[..., Any]:
+@contextmanager
+def capped_cpu_count(max_workers: int):
+    """Keep upstream dataset preprocessing from forking once per host CPU."""
+    original = os.cpu_count
+    detected = original() or 1
+    os.cpu_count = lambda: min(detected, max_workers)
+    try:
+        yield
+    finally:
+        os.cpu_count = original
+
+
+def _bounded_questions(
+    loader: Callable[..., Any], limit: int, data_workers: int
+) -> Callable[..., Any]:
     @wraps(loader)
     def bounded(*args: Any, **kwargs: Any) -> Any:
-        questions = loader(*args, **kwargs)
+        with capped_cpu_count(data_workers):
+            questions = loader(*args, **kwargs)
         effective = min(limit, len(questions))
         if hasattr(questions, "select"):
             return questions.select(range(effective))
@@ -79,9 +96,14 @@ def _patch_humaneval_fork_retry(instance: Any) -> bool:
     return True
 
 
-def configure_benchmark(instance: Any, question_limit: int, repeat_limit: int) -> dict[str, Any]:
+def configure_benchmark(
+    instance: Any,
+    question_limit: int,
+    repeat_limit: int,
+    data_workers: int = 4,
+) -> dict[str, Any]:
     """Bound an Evalchemy chat benchmark without changing the upstream checkout."""
-    if question_limit < 1 or repeat_limit < 1:
+    if question_limit < 1 or repeat_limit < 1 or data_workers < 1:
         raise ValueError("Evalchemy quick limits must be positive")
 
     policy: dict[str, Any] = {
@@ -89,10 +111,11 @@ def configure_benchmark(instance: Any, question_limit: int, repeat_limit: int) -
         "repeat_limit": None,
         "sampling": None,
         "human_eval_fork_retry": False,
+        "data_preprocessing_workers": data_workers,
     }
     loader = getattr(instance, "load_questions", None)
     if callable(loader):
-        instance.load_questions = _bounded_questions(loader, question_limit)
+        instance.load_questions = _bounded_questions(loader, question_limit, data_workers)
         policy["sampling"] = "load_questions slice"
     elif hasattr(instance, "debug"):
         # A few Evalchemy tasks (notably HumanEval) load examples inline. Their
@@ -122,7 +145,12 @@ def configure_benchmark(instance: Any, question_limit: int, repeat_limit: int) -
     return policy
 
 
-def patch_task_manager(task_manager_class: type[Any], question_limit: int, repeat_limit: int) -> None:
+def patch_task_manager(
+    task_manager_class: type[Any],
+    question_limit: int,
+    repeat_limit: int,
+    data_workers: int,
+) -> None:
     original_register = task_manager_class._register_benchmark
 
     @wraps(original_register)
@@ -130,7 +158,7 @@ def patch_task_manager(task_manager_class: type[Any], question_limit: int, repea
         original_register(self, name, benchmark_class)
         instance = self.benchmark_instances.get(name)
         if instance is not None:
-            configure_benchmark(instance, question_limit, repeat_limit)
+            configure_benchmark(instance, question_limit, repeat_limit, data_workers)
 
     task_manager_class._register_benchmark = register
 
@@ -148,6 +176,7 @@ def _positive_env(name: str) -> int:
 def main() -> None:
     question_limit = _positive_env(LIMIT_ENV)
     repeat_limit = _positive_env(REPEAT_LIMIT_ENV)
+    data_workers = _positive_env(DATA_WORKERS_ENV)
 
     # Accelerate executes this adapter by absolute path, so explicitly expose
     # the Evalchemy checkout supplied as the subprocess working directory.
@@ -157,7 +186,7 @@ def main() -> None:
     # manager before eval.eval constructs it keeps the upstream source pristine.
     from eval.task import TaskManager
 
-    patch_task_manager(TaskManager, question_limit, repeat_limit)
+    patch_task_manager(TaskManager, question_limit, repeat_limit, data_workers)
 
     from eval.eval import cli_evaluate
 

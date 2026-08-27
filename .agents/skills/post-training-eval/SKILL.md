@@ -17,6 +17,7 @@ Use the repository as the evaluation control plane. Preserve its distinction bet
 ## Select the smallest honest evaluation
 
 - Use `smoke` to prove checkpoint and harness compatibility. Treat its scores as diagnostic.
+- Use `local-quick --fast` for two-example-per-task triage with short generation caps; use it to find broken protocols and obvious regressions, not to estimate stable benchmark scores.
 - Use `quick` or `local-quick --limit 8` for a broad first comparison across every registered operational task. Explain that it is bounded per task and cannot satisfy a release gate.
 - Use `core` for repeatable checkpoint-development comparisons and parent-retention gates.
 - Use `release` only when required external, safety, multilingual, long-context, agent, and efficiency evidence can be completed or explicitly reported as missing.
@@ -33,9 +34,10 @@ Before downloading weights or launching inference:
 2. Check free disk, inodes, RAM, accelerators, per-device VRAM, active GPU processes, and the intended cache location.
 3. Resolve every Hugging Face model to an immutable revision and record the exact snapshot. Never compare floating `main` revisions.
 4. Run `pteval inspect --model MODEL_REFERENCE` before scheduling quality evaluation.
-5. Estimate checkpoint, cache, temporary artifact, and long-context KV-cache requirements. Set `--min-free-gb` to a meaningful floor on shared or nearly full hosts.
-6. Use one dedicated run directory per model and protocol. Never reuse a run directory for a different checkpoint revision or example limit.
-7. Avoid deleting shared caches. Stop and report the constraint if the run cannot fit safely.
+5. Run `pteval canary --model IMMUTABLE_SNAPSHOT --tokenizer TOKENIZER_PATH --output RUN_CANARY.json` when the tokenizer requires a compatibility view or a checkpoint may loop. Treat length-stopped canaries as a protocol/model warning, not a benchmark score.
+6. Estimate checkpoint, cache, temporary artifact, and long-context KV-cache requirements. Set `--min-free-gb` to a meaningful floor on shared or nearly full hosts.
+7. Use one dedicated run directory per model and protocol. Never reuse a run directory for a different checkpoint revision, profile, or example limit.
+8. Avoid deleting shared caches. Stop and report the constraint if the run cannot fit safely.
 
 Read [runtime selection](references/runtime-selection.md) when choosing between a Mac, GPU workstation, LUMI, or an endpoint, or when creating harness environments.
 

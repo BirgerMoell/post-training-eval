@@ -1,8 +1,14 @@
 import unittest
 from pathlib import Path
 
-from post_training_eval.evalchemy_quick_adapter import configure_benchmark, retry_filelock_fork
-from post_training_eval.local_quick import TaskSpec, batch_tasks, build_evalchemy_command, build_lm_eval_command
+from post_training_eval.evalchemy_quick_adapter import capped_cpu_count, configure_benchmark, retry_filelock_fork
+from post_training_eval.local_quick import (
+    TaskSpec,
+    batch_tasks,
+    build_evalchemy_command,
+    build_lm_eval_command,
+    evalchemy_max_tokens,
+)
 
 
 class LocalQuickTests(unittest.TestCase):
@@ -62,6 +68,21 @@ class LocalQuickTests(unittest.TestCase):
         self.assertIn("dtype=bfloat16", model_args)
         self.assertIn("tokenizer=/tokenizers/checkpoint", model_args)
 
+    def test_fast_profile_uses_short_generation_caps(self):
+        math = TaskSpec("MATH500", 0, "evalchemy")
+        gpqa = TaskSpec("GPQADiamond", 0, "evalchemy")
+        self.assertEqual(evalchemy_max_tokens(math, "fast"), 384)
+        self.assertEqual(evalchemy_max_tokens(gpqa, "fast"), 128)
+        command = build_evalchemy_command(
+            "/evalchemy/bin/python",
+            "/models/checkpoint",
+            [math],
+            Path("/runs/chunk"),
+            2,
+            profile="fast",
+        )
+        self.assertEqual(command[command.index("--max_tokens") + 1], "384")
+
     def test_evalchemy_adapter_caps_questions_and_repetitions(self):
         class Benchmark:
             n_repeat = 10
@@ -74,6 +95,15 @@ class LocalQuickTests(unittest.TestCase):
         self.assertEqual(benchmark.load_questions(), list(range(8)))
         self.assertEqual(benchmark.n_repeat, 1)
         self.assertEqual(policy["sampling"], "load_questions slice")
+        self.assertEqual(policy["data_preprocessing_workers"], 4)
+
+    def test_cpu_count_is_temporarily_capped(self):
+        import os
+
+        original = os.cpu_count
+        with capped_cpu_count(3):
+            self.assertLessEqual(os.cpu_count() or 0, 3)
+        self.assertIs(os.cpu_count, original)
 
     def test_evalchemy_adapter_uses_debug_for_inline_loaders(self):
         class InlineBenchmark:

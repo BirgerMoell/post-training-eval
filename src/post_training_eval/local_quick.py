@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 from .evalchemy_quick_adapter import LIMIT_ENV as EVALCHEMY_LIMIT_ENV
+from .evalchemy_quick_adapter import DATA_WORKERS_ENV as EVALCHEMY_DATA_WORKERS_ENV
 from .evalchemy_quick_adapter import REPEAT_LIMIT_ENV as EVALCHEMY_REPEAT_LIMIT_ENV
 
 
@@ -31,11 +32,18 @@ EVALCHEMY_MAX_TOKENS = {
     "GPQADiamond": 1024,
     "HumanEval": 1024,
 }
+EVALCHEMY_FAST_DEFAULT_MAX_TOKENS = 384
+EVALCHEMY_FAST_MAX_TOKENS = {
+    "GPQADiamond": 128,
+    "HumanEval": 384,
+}
 
 
-def evalchemy_max_tokens(task: TaskSpec) -> int | None:
+def evalchemy_max_tokens(task: TaskSpec, profile: str = "quick") -> int | None:
     if task.suite != "evalchemy":
         return None
+    if profile == "fast":
+        return EVALCHEMY_FAST_MAX_TOKENS.get(task.task, EVALCHEMY_FAST_DEFAULT_MAX_TOKENS)
     return EVALCHEMY_MAX_TOKENS.get(task.task, EVALCHEMY_DEFAULT_MAX_TOKENS)
 
 
@@ -55,12 +63,16 @@ def _chunks(values: Sequence[TaskSpec], size: int) -> list[list[TaskSpec]]:
     return [list(values[index : index + size]) for index in range(0, len(values), size)]
 
 
-def batch_tasks(tasks: Iterable[TaskSpec], max_tasks_per_invocation: int = 32) -> list[list[TaskSpec]]:
+def batch_tasks(
+    tasks: Iterable[TaskSpec],
+    max_tasks_per_invocation: int = 32,
+    profile: str = "quick",
+) -> list[list[TaskSpec]]:
     """Group compatible tasks, while isolating Evalchemy for atomic per-task saves."""
     groups: dict[tuple[str, int, int | None, str], list[TaskSpec]] = {}
     for task in tasks:
         groups.setdefault(
-            (task.suite, task.n_shot, evalchemy_max_tokens(task), _batch_partition(task)), []
+            (task.suite, task.n_shot, evalchemy_max_tokens(task, profile), _batch_partition(task)), []
         ).append(task)
     batches: list[list[TaskSpec]] = []
     suite_order = {"lm-eval-harness": 0, "lighteval": 1, "evalchemy": 2}
@@ -144,10 +156,11 @@ def build_evalchemy_command(
     output: Path,
     limit: int,
     tokenizer: str | None = None,
+    profile: str = "quick",
 ) -> list[str]:
     if not tasks:
         raise LocalQuickError("Evalchemy batches must be non-empty")
-    max_tokens = {evalchemy_max_tokens(task) for task in tasks}
+    max_tokens = {evalchemy_max_tokens(task, profile) for task in tasks}
     if None in max_tokens or len(max_tokens) != 1:
         raise LocalQuickError("Evalchemy batches must use one quick-generation token cap")
     adapter = Path(__file__).with_name("evalchemy_quick_adapter.py")
@@ -207,9 +220,15 @@ def run_local_quick(
     max_tasks_per_invocation: int = 32,
     min_free_gb: float = 20,
     hf_home: str | None = None,
+    profile: str = "quick",
+    evalchemy_data_workers: int = 4,
 ) -> Path:
     if limit < 1:
         raise LocalQuickError("limit must be at least 1")
+    if profile not in {"quick", "fast"}:
+        raise LocalQuickError("profile must be quick or fast")
+    if evalchemy_data_workers < 1:
+        raise LocalQuickError("evalchemy_data_workers must be at least 1")
     requested = set(suites)
     known = {"lm-eval-harness", "lighteval", "evalchemy"}
     if requested - known:
@@ -221,20 +240,24 @@ def run_local_quick(
 
     output_dir.mkdir(parents=True, exist_ok=True)
     tasks = [task for task in load_oellm_tasks() if task.suite in requested]
-    batches = batch_tasks(tasks, max_tasks_per_invocation)
+    batches = batch_tasks(tasks, max_tasks_per_invocation, profile)
     manifest_path = output_dir / "manifest.json"
     manifest: dict[str, Any]
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text())
-        if manifest.get("model") != model or manifest.get("limit") != limit:
-            raise LocalQuickError("Existing manifest belongs to a different model or limit")
+        if (
+            manifest.get("model") != model
+            or manifest.get("limit") != limit
+            or manifest.get("profile", "quick") != profile
+        ):
+            raise LocalQuickError("Existing manifest belongs to a different model, limit, or profile")
         existing_suites = manifest.get("suites") or sorted({task["suite"] for task in manifest.get("tasks", [])})
         if sorted(existing_suites) != sorted(requested):
             raise LocalQuickError("Existing manifest was created for a different harness selection")
     else:
         manifest = {
             "schema_version": 1,
-            "profile": "quick",
+            "profile": profile,
             "diagnostic": True,
             "model": model,
             "limit": limit,
@@ -247,12 +270,13 @@ def run_local_quick(
                 "question_limit": limit,
                 "repeat_limit": EVALCHEMY_REPEAT_LIMIT,
                 "max_new_tokens_by_task": {
-                    task.task: evalchemy_max_tokens(task)
+                    task.task: evalchemy_max_tokens(task, profile)
                     for task in tasks
                     if task.suite == "evalchemy"
                 },
                 "human_eval_sampling": "upstream debug subset (two examples per available language)",
                 "intermediate_save_policy": "one Evalchemy task per invocation; manifest updated atomically after each task",
+                "data_preprocessing_workers": evalchemy_data_workers,
                 "log_samples": False,
             },
         }
@@ -289,7 +313,15 @@ def run_local_quick(
             command = build_lighteval_command(str(lighteval_bin), model, batch, batch_dir, limit)
             cwd = None
         else:
-            command = build_evalchemy_command(str(evalchemy_python), model, batch, batch_dir, limit, evalchemy_tokenizer)
+            command = build_evalchemy_command(
+                str(evalchemy_python),
+                model,
+                batch,
+                batch_dir,
+                limit,
+                evalchemy_tokenizer,
+                profile,
+            )
             cwd = evalchemy_dir
         manifest["batches"][batch_id] = {
             "suite": suite,
@@ -305,11 +337,13 @@ def run_local_quick(
             batch_environment.update({
                 EVALCHEMY_LIMIT_ENV: str(limit),
                 EVALCHEMY_REPEAT_LIMIT_ENV: str(EVALCHEMY_REPEAT_LIMIT),
+                EVALCHEMY_DATA_WORKERS_ENV: str(evalchemy_data_workers),
             })
             manifest["batches"][batch_id]["diagnostic_policy"] = {
                 "question_limit": limit,
                 "repeat_limit": EVALCHEMY_REPEAT_LIMIT,
-                "max_new_tokens": evalchemy_max_tokens(batch[0]),
+                "max_new_tokens": evalchemy_max_tokens(batch[0], profile),
+                "data_preprocessing_workers": evalchemy_data_workers,
                 "atomic_result_per_task": True,
                 "log_samples": False,
             }

@@ -97,6 +97,18 @@ The dashboard displays these results with a yellow **Diagnostic** badge. Quick r
 
 For Evalchemy's custom chat benchmarks, `local-quick` uses a diagnostic adapter because upstream `--limit` only bounds lm-eval-style tasks. The adapter applies the requested question cap to chat-task loaders, limits repeated benchmarks to one pass, and records the policy in `manifest.json`. It caps GPQA Diamond and HumanEval generations at 1,024 tokens and other registered Evalchemy quick tasks at 2,048 tokens. HumanEval uses Evalchemy's native debug subset (two examples per available language) because it loads examples inline, and retries the transient `filelock` fork race around functional tests. Every Evalchemy task runs in its own invocation without `--log_samples`, so its aggregate result is saved independently and the manifest is updated atomically before the next task starts. Gated or otherwise unavailable data remains recorded as missing evidence while later tasks continue, and the final manifest is marked `completed_with_failures`. These bounded settings make the run useful for early model comparison, but they are not protocol-compatible with full benchmark scores or release gates.
 
+Use `--fast` for a much shorter triage pass before `quick`: it evaluates two examples per task by default, caps Evalchemy generations at 384 tokens (128 for GPQA Diamond), and limits upstream dataset preprocessing to four workers. This prevents LiveCodeBench from forking once per host CPU and exhausting RAM. Fast scores have high sampling uncertainty and short-output truncation risk; compare them only with another run using the same checkpoint-independent fast protocol.
+
+Before either profile, `pteval canary` loads the exact model and tokenizer, renders two small chat prompts, and records whether greedy and sampled generation stop on EOS or hit the token limit. This catches tokenizer/chat-template errors and repetition loops without loading every benchmark:
+
+```bash
+pteval canary \
+  --model /immutable/hf/snapshot \
+  --tokenizer /path/to/documented/tokenizer-view \
+  --max-new-tokens 128 \
+  --output runs/model-canary.json
+```
+
 ```bash
 PYTHONPATH=/path/to/oellm-eval pteval local-quick \
   --model /immutable/hf/snapshot \
@@ -106,10 +118,10 @@ PYTHONPATH=/path/to/oellm-eval pteval local-quick \
   --lighteval-bin /envs/lighteval/bin/lighteval \
   --evalchemy-python /envs/evalchemy/bin/python \
   --evalchemy-dir /path/to/evalchemy \
-  --limit 8 --gpu 0 --min-free-gb 20
+  --fast --gpu 0 --min-free-gb 20
 ```
 
-Use `--suite lm-eval-harness` while validating one runtime. Repeating the same command resumes completed batches from `manifest.json`; failed or interrupted batches are rerun. Two models can run concurrently on separate GPUs by using distinct output directories and `--gpu 0` / `--gpu 1`.
+Remove `--fast` (or set `--limit 8`) for the broader quick survey. Use `--suite lm-eval-harness` while validating one runtime. Repeating the same command resumes completed batches from `manifest.json`; failed or interrupted batches are rerun. Two models can run concurrently on separate GPUs by using distinct output directories and `--gpu 0` / `--gpu 1`.
 
 At the currently pinned Lighteval revision, keep `xxhash<4` in its isolated tool environment; `xxhash` 4.x rejects the string hashing call used while saving per-example details. The runner was smoke-tested with `xxhash==3.6.0`.
 
