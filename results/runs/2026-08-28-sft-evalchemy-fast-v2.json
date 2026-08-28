@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-08-28-sft-evalchemy-fast-v2",
+  "status": "completed",
+  "diagnostic": true,
+  "profile": "fast",
+  "started_at": "2026-08-27T22:23:28.834409+00:00",
+  "finished_at": "2026-08-28T06:46:36.446624+00:00",
+  "runtime_seconds": 566.715,
+  "model": {
+    "id": "birgermoell/oellm-9b-256k-sft",
+    "revision": "08359ad61333263c067edaf290067fea5b103d34",
+    "format": "hf"
+  },
+  "provenance": {
+    "kind": "fresh-reproduced",
+    "source": "/home/ubuntu/birger/post-training-eval-run/runs/sft-evalchemy-fast-v1-20260828",
+    "command": "PYTHONPATH=src:oellm-eval python -m post_training_eval.cli local-quick --model birgermoell/oellm-9b-256k-sft@08359ad6 --suite evalchemy --fast --evalchemy-data-workers 4 --gpu 0",
+    "harness": "Evalchemy via OpenEuroLLM/oellm-eval registry",
+    "protocol": "fast profile; limit 2; bfloat16; batch size 1; native chat template; one task per saved invocation"
+  },
+  "environment": {
+    "platform": "Linux-6.8.0-110-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "accelerator": "NVIDIA L4"
+  },
+  "limitations": [
+    "Fast diagnostic with at most 2 examples per task; uncertainty is high and scores cannot satisfy release gates.",
+    "Short generation caps can truncate valid long answers and are intentionally optimized for triage speed."
+  ],
+  "diagnostic_summary": {
+    "scheduled_tasks": 7,
+    "completed_tasks": 7,
+    "failed_tasks": 0,
+    "example_limit": 2,
+    "repeat_limit": 1,
+    "data_preprocessing_workers": 4,
+    "max_new_tokens_by_task": {
+      "GPQADiamond": 128,
+      "MATH500": 384,
+      "LiveCodeBench": 384,
+      "HumanEval": 384,
+      "AIME24": 384,
+      "AIME25": 384,
+      "AMC23": 384
+    }
+  },
+  "task_statuses": [
+    {
+      "task": "GPQADiamond",
+      "benchmark": "gpqa-diamond",
+      "status": "completed",
+      "measurement_count": 1,
+      "n": [
+        2
+      ]
+    },
+    {
+      "task": "AIME24",
+      "benchmark": "aime24",
+      "status": "completed",
+      "measurement_count": 1,
+      "n": [
+        2
+      ]
+    },
+    {
+      "task": "AIME25",
+      "benchmark": "aime25",
+      "status": "completed",
+      "measurement_count": 1,
+      "n": [
+        2
+      ]
+    },
+    {
+      "task": "AMC23",
+      "benchmark": "amc23",
+      "status": "completed",
+      "measurement_count": 1,
+      "n": [
+        2
+      ]
+    },
+    {
+      "task": "HumanEval",
+      "benchmark": "humaneval",
+      "status": "completed",
+      "measurement_count": 2,
+      "n": [
+        2
+      ]
+    },
+    {
+      "task": "LiveCodeBench",
+      "benchmark": "livecodebench",
+      "status": "completed",
+      "measurement_count": 1,
+      "n": [
+        2
+      ]
+    },
+    {
+      "task": "MATH500",
+      "benchmark": "math-500",
+      "status": "completed",
+      "measurement_count": 1,
+      "n": [
+        2
+      ]
+    }
+  ],
+  "metrics": [
+    {
+      "capability": "reasoning-knowledge",
+      "benchmark": "gpqa-diamond",
+      "task": "GPQADiamond",
+      "metric": "accuracy",
+      "value": 0.0,
+      "scale": "percentage",
+      "direction": "higher",
+      "slice": "fast diagnostic",
+      "n": 2
+    },
+    {
+      "capability": "reasoning-knowledge",
+      "benchmark": "aime24",
+      "task": "AIME24",
+      "metric": "accuracy",
+      "value": 0.0,
+      "scale": "percentage",
+      "direction": "higher",
+      "slice": "fast diagnostic",
+      "n": 2
+    },
+    {
+      "capability": "reasoning-knowledge",
+      "benchmark": "aime25",
+      "task": "AIME25",
+      "metric": "accuracy",
+      "value": 0.0,
+      "scale": "percentage",
+      "direction": "higher",
+      "slice": "fast diagnostic",
+      "n": 2
+    },
+    {
+      "capability": "reasoning-knowledge",
+      "benchmark": "amc23",
+      "task": "AMC23",
+      "metric": "accuracy",
+      "value": 0.0,
+      "scale": "percentage",
+      "direction": "higher",
+      "slice": "fast diagnostic",
+      "n": 2
+    },
+    {
+      "capability": "coding",
+      "benchmark": "humaneval",
+      "task": "HumanEval",
+      "metric": "pass_at_1",
+      "value": 0.0,
+      "scale": "percentage",
+      "direction": "higher",
+      "slice": "python · fast debug",
+      "n": 2
+    },
+    {
+      "capability": "coding",
+      "benchmark": "humaneval",
+      "task": "HumanEval",
+      "metric": "pass_at_1",
+      "value": 0.0,
+      "scale": "percentage",
+      "direction": "higher",
+      "slice": "shell · fast debug",
+      "n": 2
+    },
+    {
+      "capability": "coding",
+      "benchmark": "livecodebench",
+      "task": "LiveCodeBench",
+      "metric": "pass_at_1",
+      "value": 0.0,
+      "scale": "percentage",
+      "direction": "higher",
+      "slice": "fast diagnostic",
+      "n": 2
+    },
+    {
+      "capability": "reasoning-knowledge",
+      "benchmark": "math-500",
+      "task": "MATH500",
+      "metric": "exact_match",
+      "value": 0.0,
+      "scale": "percentage",
+      "direction": "higher",
+      "slice": "fast diagnostic",
+      "n": 2
+    }
+  ]
+}
