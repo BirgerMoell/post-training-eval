@@ -56,6 +56,8 @@ def _score_evidence_rank(run: dict[str, Any]) -> int:
     kind = (run.get("provenance") or {}).get("kind")
     if kind == "compatibility-check":
         return 0
+    if run.get("profile") == "fast":
+        return 0
     base = {"fresh-reproduced": 40, "imported-published": 30}.get(kind, 0)
     return base - 20 if run.get("diagnostic") else base
 
@@ -502,6 +504,151 @@ def ingest_oellm_csv(input_path: Path, model_id: str, run_id: str, model_revisio
     return run
 
 
+def _evalchemy_task_metrics(task: str, result: dict[str, Any], limit: int) -> list[dict[str, Any]]:
+    registry = benchmark_index()
+    benchmark_id = _task_to_benchmark(task)
+    benchmark = registry.get(benchmark_id)
+    if benchmark is None:
+        raise ResultError(f"No registered benchmark mapping for Evalchemy task {task!r}")
+
+    def metric(value: Any, *, slice_name: str | None = None, n: int | None = None) -> dict[str, Any]:
+        if not isinstance(value, (int, float)):
+            raise ResultError(f"Missing numeric score for Evalchemy task {task!r}")
+        normalized = float(value) * 100 if -1 <= float(value) <= 1 else float(value)
+        return {
+            "capability": benchmark["capability"],
+            "benchmark": benchmark_id,
+            "task": task,
+            "metric": benchmark["metric"],
+            "value": round(normalized, 6),
+            "scale": "percentage",
+            "direction": benchmark.get("direction", "higher"),
+            "slice": slice_name or "fast diagnostic",
+            "n": n if n is not None else result.get("num_total", limit),
+        }
+
+    if task == "HumanEval":
+        return [
+            metric(result.get("python_pass@1"), slice_name="python · fast debug", n=2),
+            metric(result.get("sh_pass@1"), slice_name="shell · fast debug", n=2),
+        ]
+    score_key = "accuracy" if task == "MATH500" else "accuracy_avg"
+    return [metric(result.get(score_key))]
+
+
+def _failure_reason(log_path: Path) -> str:
+    if not log_path.exists():
+        return "runner failed"
+    tail = log_path.read_text(errors="replace")[-12000:].lower()
+    if "gated" in tail or "authenticated" in tail or "access to this dataset is restricted" in tail:
+        return "dataset access unavailable"
+    if "sigkill" in tail or "killed" in tail:
+        return "process killed"
+    return "runner failed"
+
+
+def ingest_local_quick(
+    input_dir: Path,
+    model_id: str,
+    run_id: str,
+    model_revision: str | None,
+    source_command: str | None,
+    accelerator: str | None = None,
+) -> dict[str, Any]:
+    """Normalize a terminal local-quick manifest without publishing raw examples."""
+    manifest_path = input_dir / "manifest.json"
+    if not manifest_path.exists():
+        raise ResultError(f"local-quick manifest does not exist: {manifest_path}")
+    manifest = load_json(manifest_path)
+    if manifest.get("status") not in {"completed", "completed_with_failures"}:
+        raise ResultError("local-quick run must be terminal before it can be normalized")
+    profile = manifest.get("profile", "quick")
+    limit = int(manifest.get("limit", 0))
+    if limit < 1:
+        raise ResultError("local-quick manifest has no positive example limit")
+
+    metrics: list[dict[str, Any]] = []
+    task_statuses: list[dict[str, Any]] = []
+    for batch_id, batch in sorted((manifest.get("batches") or {}).items()):
+        for task in batch.get("tasks") or []:
+            benchmark_id = _task_to_benchmark(task)
+            status = batch.get("status")
+            task_status: dict[str, Any] = {
+                "task": task,
+                "benchmark": benchmark_id,
+                "status": status,
+            }
+            if status != "completed":
+                task_status["reason"] = _failure_reason(input_dir / "raw" / batch_id / "runner.log")
+                task_statuses.append(task_status)
+                continue
+            candidates = sorted((input_dir / "raw" / batch_id).rglob("results_*.json"))
+            if not candidates:
+                raise ResultError(f"Completed batch {batch_id} has no saved aggregate result")
+            raw = load_json(candidates[-1])
+            result = (raw.get("results") or {}).get(task)
+            if not isinstance(result, dict):
+                raise ResultError(f"Saved aggregate for {batch_id} has no result for {task}")
+            extracted = _evalchemy_task_metrics(task, result, limit)
+            metrics.extend(extracted)
+            task_status["measurement_count"] = len(extracted)
+            task_status["n"] = sorted({item["n"] for item in extracted if item.get("n") is not None})
+            task_statuses.append(task_status)
+
+    started = manifest.get("started_at")
+    finished = manifest.get("finished_at")
+    runtime_seconds = None
+    if started and finished:
+        runtime_seconds = round(
+            (datetime.fromisoformat(finished.replace("Z", "+00:00")) - datetime.fromisoformat(started.replace("Z", "+00:00"))).total_seconds(),
+            3,
+        )
+    completed_tasks = sum(item["status"] == "completed" for item in task_statuses)
+    failed_tasks = [item["task"] for item in task_statuses if item["status"] != "completed"]
+    policy = manifest.get("evalchemy_quick_policy") or {}
+    limitations = [
+        f"{profile.title()} diagnostic with at most {limit} examples per task; uncertainty is high and scores cannot satisfy release gates.",
+        "Short generation caps can truncate valid long answers and are intentionally optimized for triage speed.",
+    ]
+    if failed_tasks:
+        limitations.append(f"Unavailable or failed tasks are omitted from scores: {', '.join(failed_tasks)}.")
+    run = {
+        "schema_version": 1,
+        "run_id": run_id,
+        "status": "completed" if not failed_tasks else "partial",
+        "diagnostic": True,
+        "profile": profile,
+        "started_at": started,
+        "finished_at": finished,
+        "runtime_seconds": runtime_seconds,
+        "model": {"id": model_id, "revision": model_revision, "format": "hf"},
+        "provenance": {
+            "kind": "fresh-reproduced",
+            "source": str(input_dir),
+            "command": source_command,
+            "harness": "Evalchemy via OpenEuroLLM/oellm-eval registry",
+            "protocol": f"{profile} profile; limit {limit}; bfloat16; batch size 1; native chat template; one task per saved invocation",
+        },
+        "environment": {"platform": platform.platform(), "python": platform.python_version(), "accelerator": accelerator},
+        "limitations": limitations,
+        "diagnostic_summary": {
+            "scheduled_tasks": len(task_statuses),
+            "completed_tasks": completed_tasks,
+            "failed_tasks": len(failed_tasks),
+            "example_limit": limit,
+            "repeat_limit": policy.get("repeat_limit"),
+            "data_preprocessing_workers": policy.get("data_preprocessing_workers"),
+            "max_new_tokens_by_task": policy.get("max_new_tokens_by_task") or {},
+        },
+        "task_statuses": task_statuses,
+        "metrics": metrics,
+    }
+    errors = validate_result(run)
+    if errors:
+        raise ResultError("; ".join(errors))
+    return run
+
+
 def publish_run(source: Path, root: Path | None = None) -> Path:
     base = root or repository_root()
     run = load_json(source)
@@ -554,7 +701,7 @@ def build_site_data(root: Path | None = None) -> dict[str, Any]:
             "name": "Capability evidence index",
             "range": "0–100",
             "description": "Percentage quality metrics only. Lower-is-better percentages are inverted. Measurements are averaged by benchmark, then capability, then equally across capabilities with evidence.",
-            "exclusions": ["Missing capabilities", "Compatibility checks", "Ranks", "Latency", "Throughput", "Unscaled benchmark scores"],
+            "exclusions": ["Missing capabilities", "Compatibility checks", "Fast diagnostic triage", "Ranks", "Latency", "Throughput", "Unscaled benchmark scores"],
         },
         "target_policy": {
             "id": "program-floor-v1",

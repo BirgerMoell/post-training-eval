@@ -166,6 +166,57 @@ function renderGate() {
   target.innerHTML = `<p><span class="gate-status ${gate.status}">${status}</span><strong>Latest parent-retention gate</strong> · ${gate.comparison_count} matched measurements</p><span>${escapeHtml(regressions)}</span>`;
 }
 
+function formatDuration(seconds) {
+  if (!Number.isFinite(Number(seconds))) return "—";
+  const total = Math.round(Number(seconds));
+  return `${Math.floor(total / 60)}m ${String(total % 60).padStart(2, "0")}s`;
+}
+
+function renderFastDiagnostics() {
+  const runs = state.data.runs.filter(run => run.diagnostic && run.profile === "fast");
+  const section = document.querySelector("#fast-diagnostics");
+  if (!runs.length) { section.hidden = true; return; }
+  section.hidden = false;
+  const ordered = [...runs].sort((a, b) => a.model.id.localeCompare(b.model.id));
+  document.querySelector("#fast-run-cards").innerHTML = ordered.map(run => {
+    const summary = run.diagnostic_summary || {};
+    const completed = summary.completed_tasks ?? run.task_statuses?.filter(item => item.status === "completed").length ?? 0;
+    const scheduled = summary.scheduled_tasks ?? run.task_statuses?.length ?? 0;
+    return `<article class="fast-run-card"><div><span class="pill diagnostic">Fast · n≤${escapeHtml(summary.example_limit ?? "?")}</span><h3>${escapeHtml(shortModel(run.model.id))}</h3><span class="model-revision">${escapeHtml(shortSha(run.model.revision))}</span></div><div class="fast-run-stat"><strong>${completed}/${scheduled}</strong><span>tasks available</span></div><div class="fast-run-stat"><strong>${escapeHtml(formatDuration(run.runtime_seconds))}</strong><span>wall time · ${escapeHtml(run.environment?.accelerator || "accelerator unrecorded")}</span></div></article>`;
+  }).join("");
+
+  const preferred = ["MATH500", "AIME24", "AIME25", "AMC23", "HumanEval", "LiveCodeBench", "GPQADiamond"];
+  const statuses = ordered.flatMap(run => run.task_statuses || []);
+  const tasks = [...new Set(statuses.map(item => item.task))].sort((a, b) => {
+    const ai = preferred.indexOf(a), bi = preferred.indexOf(b);
+    return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi) || a.localeCompare(b);
+  });
+  const header = `<div class="fast-row fast-head" style="--fast-model-count:${ordered.length}"><span>Benchmark</span>${ordered.map(run => `<span>${escapeHtml(shortModel(run.model.id))}</span>`).join("")}</div>`;
+  const rows = tasks.map(task => {
+    const definitionStatus = statuses.find(item => item.task === task);
+    const benchmark = lookupBenchmark(
+      state.data.capabilities.find(cap => cap.benchmarks.some(item => item.id === definitionStatus?.benchmark))?.id,
+      definitionStatus?.benchmark,
+    );
+    const name = benchmark?.name || label(task);
+    const cells = ordered.map(run => {
+      const taskStatus = (run.task_statuses || []).find(item => item.task === task);
+      if (!taskStatus || taskStatus.status !== "completed") {
+        return `<div class="fast-score unavailable"><strong>Unavailable</strong><small>${escapeHtml(taskStatus?.reason || "not run")}</small></div>`;
+      }
+      const metrics = run.metrics.filter(metric => metric.benchmark === taskStatus.benchmark);
+      if (!metrics.length) return `<div class="fast-score unavailable"><strong>—</strong><small>no saved score</small></div>`;
+      const score = metrics.reduce((sum, metric) => sum + Number(metric.value), 0) / metrics.length;
+      const sampleCounts = [...new Set(metrics.map(metric => metric.n).filter(value => value != null))];
+      const slices = metrics.length > 1 ? `${metrics.length} slices · ` : "";
+      const gap = targetGap(score, benchmark);
+      return `<div class="fast-score"><strong>${escapeHtml(score.toFixed(score % 1 ? 1 : 0))}%</strong><small>${escapeHtml(slices)}${sampleCounts.length ? `n=${sampleCounts.join("/")}` : "sample count unavailable"}</small>${targetGapBadge(gap, benchmark?.direction, "percentage", benchmark)}</div>`;
+    }).join("");
+    return `<div class="fast-row" style="--fast-model-count:${ordered.length}"><div><strong>${benchmarkNameLink(benchmark, name)}</strong><small>${escapeHtml(benchmark?.metric || "score")} · target ${escapeHtml(targetThreshold(benchmark))}</small></div>${cells}</div>`;
+  }).join("");
+  document.querySelector("#fast-comparison").innerHTML = header + rows;
+}
+
 function benchmarkCell(model, capabilityId, benchmark) {
   const capability = modelCapability(model, capabilityId);
   const evidence = capability?.benchmarks.find(item => item.id === benchmark.id);
@@ -257,7 +308,7 @@ async function init() {
   const response = await fetch("data/index.json", { cache: "no-store" });
   if (!response.ok) throw new Error(`Could not load data: ${response.status}`);
   state.data = await response.json();
-  renderScorecards(); renderGate(); renderCapabilityComparison(); renderCapabilities(); populateFilters(); renderResults();
+  renderScorecards(); renderFastDiagnostics(); renderGate(); renderCapabilityComparison(); renderCapabilities(); populateFilters(); renderResults();
   document.querySelector("#score-method").innerHTML = `<strong>${escapeHtml(state.data.score_method.name)}:</strong> ${escapeHtml(state.data.score_method.description)} <span>Excluded: ${escapeHtml(state.data.score_method.exclusions.join(", "))}.</span>`;
   document.querySelector("#target-method").innerHTML = `<strong>${escapeHtml(state.data.target_policy.name)}:</strong> ${escapeHtml(state.data.target_policy.description)} <span>${escapeHtml(state.data.target_policy.gap_definition)}</span>`;
   document.querySelector("#generated").textContent = `Last built ${new Date(state.data.generated_at).toLocaleString()}.`;

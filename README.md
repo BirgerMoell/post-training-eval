@@ -123,6 +123,21 @@ PYTHONPATH=/path/to/oellm-eval pteval local-quick \
 
 Remove `--fast` (or set `--limit 8`) for the broader quick survey. Use `--suite lm-eval-harness` while validating one runtime. Repeating the same command resumes completed batches from `manifest.json`; failed or interrupted batches are rerun. Two models can run concurrently on separate GPUs by using distinct output directories and `--gpu 0` / `--gpu 1`.
 
+Once a fast run is terminal, normalize its manifest and saved aggregate task results for the dashboard. Raw benchmark examples remain outside the repository; the published record contains only scores, counts, runtime, protocol, and task availability:
+
+```bash
+pteval ingest-local-quick \
+  --input-dir runs/model-fast \
+  --model-id owner/model \
+  --model-revision COMMIT_SHA \
+  --run-id model-fast-YYYY-MM-DD \
+  --accelerator "NVIDIA L4" \
+  --source-command "pteval local-quick ... --fast" \
+  --output runs/model-fast.json
+```
+
+Fast records appear in their own dashboard matrix and are excluded from the release-oriented aggregate capability index and target pass counts.
+
 At the currently pinned Lighteval revision, keep `xxhash<4` in its isolated tool environment; `xxhash` 4.x rejects the string hashing call used while saving per-example details. The runner was smoke-tested with `xxhash==3.6.0`.
 
 ## Run on LUMI with `oellm-eval`

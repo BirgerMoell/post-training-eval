@@ -24,15 +24,22 @@
       <details class="method-note target-method"><summary>How targets and gaps work</summary><p id="target-method"></p></details>
     </section>
 
+    <section id="fast-diagnostics" class="panel fast-panel" hidden>
+      <div class="section-heading compact-heading"><div><p class="eyebrow">02 / FAST DIAGNOSTIC</p><h2>Quick benchmark signal</h2></div><p>Very small slices for rapid checkpoint triage. Compare only runs with the same fast protocol.</p></div>
+      <div id="fast-run-cards" class="fast-run-cards"></div>
+      <div id="fast-comparison" class="fast-comparison"></div>
+      <div class="fast-warning"><strong>Directional only.</strong> Two examples can distinguish obvious failures, but cannot estimate a stable benchmark score or satisfy a release target.</div>
+    </section>
+
     <section class="panel comparison-panel">
-      <div class="section-heading compact-heading"><div><p class="eyebrow">02 / CAPABILITIES</p><h2>Side-by-side comparison</h2></div><p>Open a capability to compare its benchmarks and target status.</p></div>
+      <div class="section-heading compact-heading"><div><p class="eyebrow">03 / CAPABILITIES</p><h2>Side-by-side comparison</h2></div><p>Open a capability to compare its benchmarks and target status.</p></div>
       <div id="capability-comparison" class="capability-comparison"></div>
     </section>
 
     <section id="gate-summary" class="gate-summary compact-gate" aria-label="Latest comparison gate"></section>
 
     <details id="evidence-explorer" class="panel evidence-panel">
-      <summary><span><span class="eyebrow">03 / EVIDENCE</span><strong>Benchmark ledger</strong></span><span id="result-count" aria-live="polite"></span></summary>
+      <summary><span><span class="eyebrow">04 / EVIDENCE</span><strong>Benchmark ledger</strong></span><span id="result-count" aria-live="polite"></span></summary>
       <div class="evidence-content">
         <div class="filters">
           <label>Model<select id="model-filter"><option value="">All models</option></select></label>

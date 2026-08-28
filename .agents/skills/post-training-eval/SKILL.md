@@ -73,7 +73,7 @@ Monitor long runs without starting duplicates:
 
 ## Normalize and compare
 
-Normalize raw harness output into the repository run schema. Use `ingest-lm-eval-dir` for grouped resumable lm-eval output and `ingest-oellm-csv` for a unified OpenEuroLLM collector CSV. Mark every bounded run `diagnostic`.
+Normalize raw harness output into the repository run schema. Use `ingest-lm-eval-dir` for grouped resumable lm-eval output, `ingest-oellm-csv` for a unified OpenEuroLLM collector CSV, and `ingest-local-quick` for a terminal workstation manifest with per-task aggregate saves. Mark every bounded run `diagnostic`. Fast records belong in the dashboard's separate diagnostic matrix and must not enter the main capability aggregate or release target pass counts.
 
 Require every measurement to retain model revision, harness and task version, prompt/chat protocol, few-shot count, decoding settings, limit/sample count, language or slice, raw artifact location, and limitations. Refuse comparisons when material protocol fields differ.
 

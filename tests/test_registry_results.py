@@ -7,7 +7,7 @@ from pathlib import Path
 from post_training_eval.checkpoints import parse_checkpoint
 from post_training_eval.planner import build_plan
 from post_training_eval.registry import benchmark_index, validate_registry
-from post_training_eval.results import ResultError, _build_model_scorecard, _task_to_benchmark, build_site_data, ingest_lm_eval, ingest_lm_eval_directory, ingest_oellm_csv, publish_run
+from post_training_eval.results import ResultError, _build_model_scorecard, _task_to_benchmark, build_site_data, ingest_lm_eval, ingest_lm_eval_directory, ingest_local_quick, ingest_oellm_csv, publish_run
 from post_training_eval.gates import compare_runs
 from post_training_eval.holdouts import _sample_by_bucket
 
@@ -144,6 +144,42 @@ class RegistryResultTests(unittest.TestCase):
             path.write_text(content)
             run = ingest_oellm_csv(path, "owner/model", "quick-auto", "abc", "oellm-eval schedule --limit=8")
         self.assertTrue(run["diagnostic"])
+
+    def test_local_fast_ingestion_keeps_failures_and_scores(self):
+        manifest = {
+            "profile": "fast",
+            "status": "completed_with_failures",
+            "limit": 2,
+            "started_at": "2026-08-28T00:00:00+00:00",
+            "finished_at": "2026-08-28T00:01:30+00:00",
+            "evalchemy_quick_policy": {"repeat_limit": 1, "data_preprocessing_workers": 4},
+            "batches": {
+                "batch-a": {"tasks": ["AIME24"], "status": "completed"},
+                "batch-b": {"tasks": ["GPQADiamond"], "status": "failed"},
+            },
+        }
+        result = {"results": {"AIME24": {"accuracy_avg": 0.5, "num_total": 2}}}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "raw" / "batch-a" / "model").mkdir(parents=True)
+            (root / "raw" / "batch-b").mkdir(parents=True)
+            (root / "manifest.json").write_text(json.dumps(manifest))
+            (root / "raw" / "batch-a" / "model" / "results_test.json").write_text(json.dumps(result))
+            (root / "raw" / "batch-b" / "runner.log").write_text("Access to this dataset is restricted and gated")
+            run = ingest_local_quick(root, "owner/model", "fast-run", "abc", "pteval local-quick --fast", "NVIDIA L4")
+        self.assertEqual(run["status"], "partial")
+        self.assertEqual(run["profile"], "fast")
+        self.assertEqual(run["runtime_seconds"], 90.0)
+        self.assertEqual(run["metrics"][0]["value"], 50.0)
+        self.assertEqual(run["metrics"][0]["n"], 2)
+        self.assertEqual(run["task_statuses"][1]["reason"], "dataset access unavailable")
+
+    def test_fast_diagnostic_never_enters_main_scorecard(self):
+        capabilities = [{"id": "reasoning-knowledge", "name": "Reasoning", "benchmarks": [{"id": "aime24", "name": "AIME", "metric": "accuracy", "direction": "higher", "target": 25}]}]
+        run = {"run_id": "fast", "status": "completed", "profile": "fast", "diagnostic": True, "model": {"id": "owner/model"}, "provenance": {"kind": "fresh-reproduced"}, "metrics": [{"capability": "reasoning-knowledge", "benchmark": "aime24", "metric": "accuracy", "value": 50, "scale": "percentage"}]}
+        scorecard = _build_model_scorecard("owner/model", [run], capabilities)
+        self.assertIsNone(scorecard["aggregate_score"])
+        self.assertEqual(scorecard["targets_measured"], 0)
 
     def test_endpoint_quick_sample_covers_every_bucket(self):
         rows = [

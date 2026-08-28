@@ -9,7 +9,7 @@ from pathlib import Path
 from .checkpoints import CheckpointError, inspect_checkpoint, parse_checkpoint, prepare_megatron
 from .planner import build_plan, write_plan
 from .registry import repository_root, validate_registry
-from .results import ResultError, git_publish, ingest_lm_eval, ingest_lm_eval_directory, ingest_oellm_csv, publish_run, validate_result, write_site_data
+from .results import ResultError, git_publish, ingest_lm_eval, ingest_lm_eval_directory, ingest_local_quick, ingest_oellm_csv, publish_run, validate_result, write_site_data
 from .holdouts import run_endpoint
 from .gates import compare_runs
 from .generation_canary import run_generation_canary
@@ -106,6 +106,14 @@ def build_parser() -> argparse.ArgumentParser:
     collect_p.add_argument("--source-command")
     collect_p.add_argument("--diagnostic", action="store_true", help="Mark bounded/quick collector output as non-release evidence")
     collect_p.add_argument("--output", required=True)
+    local_ingest_p = sub.add_parser("ingest-local-quick", help="Normalize a terminal local-quick run for the diagnostic dashboard")
+    local_ingest_p.add_argument("--input-dir", required=True)
+    local_ingest_p.add_argument("--model-id", required=True)
+    local_ingest_p.add_argument("--model-revision")
+    local_ingest_p.add_argument("--run-id", required=True)
+    local_ingest_p.add_argument("--source-command")
+    local_ingest_p.add_argument("--accelerator")
+    local_ingest_p.add_argument("--output", required=True)
     publish_p = sub.add_parser("publish", help="Validate a run, add it to the registry, rebuild Pages data, optionally push")
     publish_p.add_argument("--run", required=True)
     publish_p.add_argument("--push", action="store_true")
@@ -194,6 +202,9 @@ def main(argv: list[str] | None = None) -> int:
             _write(run, args.output)
         elif args.command == "ingest-oellm-csv":
             run = ingest_oellm_csv(Path(args.input), args.model_id, args.run_id, args.model_revision, args.source_command, args.source_model, args.diagnostic)
+            _write(run, args.output)
+        elif args.command == "ingest-local-quick":
+            run = ingest_local_quick(Path(args.input_dir), args.model_id, args.run_id, args.model_revision, args.source_command, args.accelerator)
             _write(run, args.output)
         elif args.command == "publish":
             root = repository_root()
