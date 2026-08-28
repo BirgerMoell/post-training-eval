@@ -177,12 +177,19 @@ function renderFastDiagnostics() {
   const section = document.querySelector("#fast-diagnostics");
   if (!runs.length) { section.hidden = true; return; }
   section.hidden = false;
-  const ordered = [...runs].sort((a, b) => a.model.id.localeCompare(b.model.id));
+  const newestByModel = new Map();
+  runs.forEach(run => {
+    const current = newestByModel.get(run.model.id);
+    const runKey = `${run.finished_at || run.started_at || ""}\u0000${run.run_id || ""}`;
+    const currentKey = current ? `${current.finished_at || current.started_at || ""}\u0000${current.run_id || ""}` : "";
+    if (!current || runKey > currentKey) newestByModel.set(run.model.id, run);
+  });
+  const ordered = [...newestByModel.values()].sort((a, b) => a.model.id.localeCompare(b.model.id));
   document.querySelector("#fast-run-cards").innerHTML = ordered.map(run => {
     const summary = run.diagnostic_summary || {};
     const completed = summary.completed_tasks ?? run.task_statuses?.filter(item => item.status === "completed").length ?? 0;
     const scheduled = summary.scheduled_tasks ?? run.task_statuses?.length ?? 0;
-    return `<article class="fast-run-card"><div><span class="pill diagnostic">Fast · n≤${escapeHtml(summary.example_limit ?? "?")}</span><h3>${escapeHtml(shortModel(run.model.id))}</h3><span class="model-revision">${escapeHtml(shortSha(run.model.revision))}</span></div><div class="fast-run-stat"><strong>${completed}/${scheduled}</strong><span>tasks available</span></div><div class="fast-run-stat"><strong>${escapeHtml(formatDuration(run.runtime_seconds))}</strong><span>wall time · ${escapeHtml(run.environment?.accelerator || "accelerator unrecorded")}</span></div></article>`;
+    return `<article class="fast-run-card"><div><span class="pill diagnostic">Fast · n≤${escapeHtml(summary.example_limit ?? "?")}</span><h3>${escapeHtml(shortModel(run.model.id))}</h3><span class="model-revision">${escapeHtml(shortSha(run.model.revision))}</span></div><div class="fast-run-stat"><strong>${completed}/${scheduled}</strong><span>tasks available</span></div><div class="fast-run-stat"><strong>${escapeHtml(formatDuration(run.runtime_seconds))}</strong><span>active run time · ${escapeHtml(run.environment?.accelerator || "accelerator unrecorded")}</span></div></article>`;
   }).join("");
 
   const preferred = ["MATH500", "AIME24", "AIME25", "AMC23", "HumanEval", "LiveCodeBench", "GPQADiamond"];

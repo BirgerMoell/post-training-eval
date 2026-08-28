@@ -154,8 +154,23 @@ class RegistryResultTests(unittest.TestCase):
             "finished_at": "2026-08-28T00:01:30+00:00",
             "evalchemy_quick_policy": {"repeat_limit": 1, "data_preprocessing_workers": 4},
             "batches": {
-                "batch-a": {"tasks": ["AIME24"], "status": "completed"},
-                "batch-b": {"tasks": ["GPQADiamond"], "status": "failed"},
+                "batch-a": {
+                    "tasks": ["AIME24"],
+                    "status": "completed",
+                    "started_at": "2026-08-28T00:00:00+00:00",
+                    "finished_at": "2026-08-28T00:00:30+00:00",
+                },
+                "batch-b": {
+                    "tasks": ["GPQADiamond"],
+                    "status": "failed",
+                    "started_at": "2026-08-28T00:01:00+00:00",
+                    "finished_at": "2026-08-28T00:01:20+00:00",
+                    "attempts": [{
+                        "status": "failed",
+                        "started_at": "2026-08-28T00:00:40+00:00",
+                        "finished_at": "2026-08-28T00:00:50+00:00",
+                    }],
+                },
             },
         }
         result = {"results": {"AIME24": {"accuracy_avg": 0.5, "num_total": 2}}}
@@ -169,7 +184,7 @@ class RegistryResultTests(unittest.TestCase):
             run = ingest_local_quick(root, "owner/model", "fast-run", "abc", "pteval local-quick --fast", "NVIDIA L4")
         self.assertEqual(run["status"], "partial")
         self.assertEqual(run["profile"], "fast")
-        self.assertEqual(run["runtime_seconds"], 90.0)
+        self.assertEqual(run["runtime_seconds"], 60.0)
         self.assertEqual(run["metrics"][0]["value"], 50.0)
         self.assertEqual(run["metrics"][0]["n"], 2)
         self.assertEqual(run["task_statuses"][1]["reason"], "dataset access unavailable")

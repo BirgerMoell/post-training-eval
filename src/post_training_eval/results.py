@@ -597,8 +597,20 @@ def ingest_local_quick(
 
     started = manifest.get("started_at")
     finished = manifest.get("finished_at")
-    runtime_seconds = None
-    if started and finished:
+    batch_runtime_seconds = 0.0
+    timed_attempts = 0
+    for batch in (manifest.get("batches") or {}).values():
+        for attempt in [*(batch.get("attempts") or []), batch]:
+            attempt_started = attempt.get("started_at")
+            attempt_finished = attempt.get("finished_at")
+            if attempt_started and attempt_finished:
+                batch_runtime_seconds += (
+                    datetime.fromisoformat(attempt_finished.replace("Z", "+00:00"))
+                    - datetime.fromisoformat(attempt_started.replace("Z", "+00:00"))
+                ).total_seconds()
+                timed_attempts += 1
+    runtime_seconds = round(batch_runtime_seconds, 3) if timed_attempts else None
+    if runtime_seconds is None and started and finished:
         runtime_seconds = round(
             (datetime.fromisoformat(finished.replace("Z", "+00:00")) - datetime.fromisoformat(started.replace("Z", "+00:00"))).total_seconds(),
             3,

@@ -302,6 +302,14 @@ def run_local_quick(
         existing = manifest["batches"].get(batch_id, {})
         if existing.get("status") == "completed":
             continue
+        attempts = list(existing.get("attempts") or [])
+        if existing.get("started_at") and existing.get("finished_at"):
+            attempts.append({
+                "status": existing.get("status"),
+                "returncode": existing.get("returncode"),
+                "started_at": existing["started_at"],
+                "finished_at": existing["finished_at"],
+            })
         batch_dir = output_dir / "raw" / batch_id
         batch_dir.mkdir(parents=True, exist_ok=True)
         if _free_gb(output_dir) < min_free_gb:
@@ -332,6 +340,8 @@ def run_local_quick(
             "command": command,
             "log": str(batch_dir / "runner.log"),
         }
+        if attempts:
+            manifest["batches"][batch_id]["attempts"] = attempts
         batch_environment = environment.copy()
         if suite == "evalchemy":
             batch_environment.update({
@@ -360,6 +370,8 @@ def run_local_quick(
     manifest["status"] = "completed_with_failures" if failed_batches else "completed"
     if failed_batches:
         manifest["failed_batches"] = failed_batches
+    else:
+        manifest.pop("failed_batches", None)
     manifest["finished_at"] = _now()
     _write_json(manifest_path, manifest)
     return manifest_path
