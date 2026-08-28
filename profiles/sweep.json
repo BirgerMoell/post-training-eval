@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "sweep",
+  "description": "Very small nine-capability diagnostic sweep for rapid checkpoint comparison.",
+  "diagnostic": true,
+  "coverage": "Nineteen probes cover all nine capability contracts. Standard and holdout tasks use at most two examples per task or bucket; long-context uses one deterministic case at 4K and 32K.",
+  "capability_probes": [
+    {"capability": "coding", "benchmarks": ["humaneval", "livecodebench"]},
+    {"capability": "efficiency-release", "benchmarks": ["checkpoint-compatibility"]},
+    {"capability": "grounding-rag", "benchmarks": ["oellm-grounding-holdouts", "oellm-no-answer-holdouts"]},
+    {"capability": "instruction-chat", "benchmarks": ["ifeval", "oellm-instruction-holdouts", "oellm-summary-holdouts"]},
+    {"capability": "long-context", "benchmarks": ["niah-natural", "niah-exact-format", "oellm-long-context-holdouts"]},
+    {"capability": "multilingual", "benchmarks": ["sib-200", "oellm-locale-holdouts", "oellm-translationese-holdouts"]},
+    {"capability": "reasoning-knowledge", "benchmarks": ["math-500", "gpqa-diamond", "oellm-reasoning-holdouts"]},
+    {"capability": "safety", "benchmarks": ["oellm-safety-holdouts"]},
+    {"capability": "tools-agents", "benchmarks": ["oellm-tool-holdouts"]}
+  ],
+  "steps": [
+    {"id": "checkpoint", "capability": "efficiency-release", "driver": "inspect", "required": true},
+    {"id": "standard-sweep", "capabilities": ["multilingual", "instruction-chat", "reasoning-knowledge", "coding"], "driver": "local-quick", "tasks": ["ifeval", "sib200_deu_Latn", "sib200_mlt_Latn", "sib200_swe_Latn", "MATH500", "GPQADiamond", "HumanEval", "LiveCodeBench"], "limit": 2, "required": true, "notes": "Run pteval local-quick --sweep with the workstation's pinned lm-eval and Evalchemy runtime paths. The command is intentionally not guessed by the generic planner."},
+    {"id": "holdout-sweep", "capabilities": ["safety", "multilingual", "instruction-chat", "reasoning-knowledge", "grounding-rag", "tools-agents", "long-context"], "driver": "openai-endpoint", "suite": "oellm-eu-eval-holdouts-v1", "samples_per_bucket": 2, "required": true},
+    {"id": "long-context-sweep", "capability": "long-context", "driver": "builtin-niah", "lengths": [4096, 32768], "depths": [50], "required": true}
+  ]
+}

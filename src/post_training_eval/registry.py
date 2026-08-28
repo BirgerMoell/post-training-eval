@@ -84,11 +84,20 @@ def validate_registry(root: Path | None = None) -> list[str]:
         errors.append(str(exc))
     for profile_path in sorted((base / "profiles").glob("*.json")):
         profile = load_json(profile_path)
+        for probe in profile.get("capability_probes", []):
+            if probe.get("capability") not in ids:
+                errors.append(f"{profile_path.name}: unknown probe capability {probe.get('capability')}")
+            for benchmark_id in probe.get("benchmarks", []):
+                benchmark = benchmarks.get(benchmark_id)
+                if benchmark is None:
+                    errors.append(f"{profile_path.name}: unknown probe benchmark {benchmark_id}")
+                elif benchmark.get("capability") != probe.get("capability"):
+                    errors.append(f"{profile_path.name}: probe benchmark {benchmark_id} belongs to {benchmark.get('capability')}")
         for step in profile.get("steps", []):
             step_capabilities = step.get("capabilities") or [step.get("capability")]
             for capability in step_capabilities:
                 if capability not in ids:
                     errors.append(f"{profile_path.name}: unknown capability {capability}")
-            if step.get("driver") not in {"inspect", "oellm-eval", "lm-eval", "builtin-niah", "external", "openai-endpoint"}:
+            if step.get("driver") not in {"inspect", "local-quick", "oellm-eval", "lm-eval", "builtin-niah", "external", "openai-endpoint"}:
                 errors.append(f"{profile_path.name}: unknown driver {step.get('driver')}")
     return errors

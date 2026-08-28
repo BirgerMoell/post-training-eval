@@ -9,7 +9,7 @@ from pathlib import Path
 from .checkpoints import CheckpointError, inspect_checkpoint, parse_checkpoint, prepare_megatron
 from .planner import build_plan, write_plan
 from .registry import repository_root, validate_registry
-from .results import ResultError, git_publish, ingest_lm_eval, ingest_lm_eval_directory, ingest_local_quick, ingest_oellm_csv, publish_run, validate_result, write_site_data
+from .results import ResultError, git_publish, ingest_checkpoint_inspection, ingest_endpoint_report, ingest_lm_eval, ingest_lm_eval_directory, ingest_local_quick, ingest_niah_report, ingest_oellm_csv, publish_run, validate_result, write_site_data
 from .holdouts import run_endpoint
 from .gates import compare_runs
 from .generation_canary import run_generation_canary
@@ -40,7 +40,7 @@ def build_parser() -> argparse.ArgumentParser:
     plan_p = sub.add_parser("plan", help="Resolve a capability profile to concrete runner commands")
     plan_p.add_argument("--model", required=True)
     profile_selection = plan_p.add_mutually_exclusive_group()
-    profile_selection.add_argument("--profile", choices=("smoke", "quick", "core", "release"))
+    profile_selection.add_argument("--profile", choices=("smoke", "sweep", "quick", "core", "release"))
     profile_selection.add_argument("--quick", action="store_true", help="Sample every operational task for a broad, diagnostic capability survey")
     plan_p.add_argument("--limit", type=int, help="Override the quick/per-step example cap for lm-eval and oellm-eval tasks")
     plan_p.add_argument("--venv-path")
@@ -59,7 +59,10 @@ def build_parser() -> argparse.ArgumentParser:
     local_p.add_argument("--evalchemy-tokenizer")
     local_p.add_argument("--suite", action="append", choices=("lm-eval-harness", "lighteval", "evalchemy"))
     local_p.add_argument("--limit", type=int, help="Examples per task (default: 8, or 2 with --fast)")
-    local_p.add_argument("--fast", action="store_true", help="Triage every task with two examples and short generation caps")
+    local_profile = local_p.add_mutually_exclusive_group()
+    local_profile.add_argument("--fast", action="store_true", help="Triage every selected task with two examples and short generation caps")
+    local_profile.add_argument("--sweep", action="store_true", help="Run the curated eight-task, four-capability standard benchmark sweep")
+    local_p.add_argument("--task", action="append", help="Exact oellm-eval task name to include; may be repeated")
     local_p.add_argument("--evalchemy-data-workers", type=int, default=4, help="Bound dataset preprocessing processes")
     local_p.add_argument("--gpu", default="0")
     local_p.add_argument("--max-tasks-per-invocation", type=int, default=32)
@@ -114,6 +117,27 @@ def build_parser() -> argparse.ArgumentParser:
     local_ingest_p.add_argument("--source-command")
     local_ingest_p.add_argument("--accelerator")
     local_ingest_p.add_argument("--output", required=True)
+    endpoint_ingest_p = sub.add_parser("ingest-endpoint", help="Normalize a terminal endpoint holdout report as diagnostic sweep evidence")
+    endpoint_ingest_p.add_argument("--input", required=True)
+    endpoint_ingest_p.add_argument("--model-id", required=True)
+    endpoint_ingest_p.add_argument("--model-revision")
+    endpoint_ingest_p.add_argument("--run-id", required=True)
+    endpoint_ingest_p.add_argument("--source-command")
+    endpoint_ingest_p.add_argument("--output", required=True)
+    niah_ingest_p = sub.add_parser("ingest-niah", help="Normalize a completed built-in NIAH report as diagnostic sweep evidence")
+    niah_ingest_p.add_argument("--input", required=True)
+    niah_ingest_p.add_argument("--model-id", required=True)
+    niah_ingest_p.add_argument("--model-revision")
+    niah_ingest_p.add_argument("--run-id", required=True)
+    niah_ingest_p.add_argument("--source-command")
+    niah_ingest_p.add_argument("--output", required=True)
+    inspect_ingest_p = sub.add_parser("ingest-inspect", help="Normalize checkpoint inspection as compatibility evidence")
+    inspect_ingest_p.add_argument("--input", required=True)
+    inspect_ingest_p.add_argument("--model-id", required=True)
+    inspect_ingest_p.add_argument("--model-revision")
+    inspect_ingest_p.add_argument("--run-id", required=True)
+    inspect_ingest_p.add_argument("--source-command")
+    inspect_ingest_p.add_argument("--output", required=True)
     publish_p = sub.add_parser("publish", help="Validate a run, add it to the registry, rebuild Pages data, optionally push")
     publish_p.add_argument("--run", required=True)
     publish_p.add_argument("--push", action="store_true")
@@ -156,7 +180,7 @@ def main(argv: list[str] | None = None) -> int:
             if not args.execute:
                 print("Dry run only. Add --execute to launch runnable steps.")
         elif args.command == "local-quick":
-            local_limit = args.limit if args.limit is not None else (2 if args.fast else 8)
+            local_limit = args.limit if args.limit is not None else (2 if args.fast or args.sweep else 8)
             manifest = run_local_quick(
                 model=args.model,
                 output_dir=Path(args.output_dir),
@@ -172,8 +196,9 @@ def main(argv: list[str] | None = None) -> int:
                 max_tasks_per_invocation=args.max_tasks_per_invocation,
                 min_free_gb=args.min_free_gb,
                 hf_home=args.hf_home,
-                profile="fast" if args.fast else "quick",
+                profile="sweep" if args.sweep else ("fast" if args.fast else "quick"),
                 evalchemy_data_workers=args.evalchemy_data_workers,
+                task_names=args.task,
             )
             print(manifest)
         elif args.command == "canary":
@@ -205,6 +230,15 @@ def main(argv: list[str] | None = None) -> int:
             _write(run, args.output)
         elif args.command == "ingest-local-quick":
             run = ingest_local_quick(Path(args.input_dir), args.model_id, args.run_id, args.model_revision, args.source_command, args.accelerator)
+            _write(run, args.output)
+        elif args.command == "ingest-endpoint":
+            run = ingest_endpoint_report(Path(args.input), args.model_id, args.run_id, args.model_revision, args.source_command)
+            _write(run, args.output)
+        elif args.command == "ingest-niah":
+            run = ingest_niah_report(Path(args.input), args.model_id, args.run_id, args.model_revision, args.source_command)
+            _write(run, args.output)
+        elif args.command == "ingest-inspect":
+            run = ingest_checkpoint_inspection(Path(args.input), args.model_id, args.run_id, args.model_revision, args.source_command)
             _write(run, args.output)
         elif args.command == "publish":
             root = repository_root()

@@ -38,11 +38,22 @@ EVALCHEMY_FAST_MAX_TOKENS = {
     "HumanEval": 384,
 }
 
+SWEEP_TASKS = (
+    "ifeval",
+    "sib200_deu_Latn",
+    "sib200_mlt_Latn",
+    "sib200_swe_Latn",
+    "MATH500",
+    "GPQADiamond",
+    "HumanEval",
+    "LiveCodeBench",
+)
+
 
 def evalchemy_max_tokens(task: TaskSpec, profile: str = "quick") -> int | None:
     if task.suite != "evalchemy":
         return None
-    if profile == "fast":
+    if profile in {"fast", "sweep"}:
         return EVALCHEMY_FAST_MAX_TOKENS.get(task.task, EVALCHEMY_FAST_DEFAULT_MAX_TOKENS)
     return EVALCHEMY_MAX_TOKENS.get(task.task, EVALCHEMY_DEFAULT_MAX_TOKENS)
 
@@ -89,6 +100,19 @@ def load_oellm_tasks() -> list[TaskSpec]:
             "OpenEuroLLM/oellm-eval is required. Install it or add its checkout to PYTHONPATH."
         ) from exc
     return [TaskSpec(row.task, int(row.n_shot), row.suite) for row in _expand_task_groups(["all"])]
+
+
+def select_tasks(tasks: Iterable[TaskSpec], task_names: Sequence[str] | None) -> list[TaskSpec]:
+    """Select exact official registry tasks while preserving their suite and shot protocol."""
+    available = list(tasks)
+    if not task_names:
+        return available
+    requested = list(dict.fromkeys(task_names))
+    selected = [task for task in available if task.task in requested]
+    missing = sorted(set(requested) - {task.task for task in selected})
+    if missing:
+        raise LocalQuickError(f"Unknown oellm-eval task(s): {', '.join(missing)}")
+    return selected
 
 
 def build_lm_eval_command(
@@ -222,11 +246,12 @@ def run_local_quick(
     hf_home: str | None = None,
     profile: str = "quick",
     evalchemy_data_workers: int = 4,
+    task_names: Sequence[str] | None = None,
 ) -> Path:
     if limit < 1:
         raise LocalQuickError("limit must be at least 1")
-    if profile not in {"quick", "fast"}:
-        raise LocalQuickError("profile must be quick or fast")
+    if profile not in {"quick", "fast", "sweep"}:
+        raise LocalQuickError("profile must be quick, fast, or sweep")
     if evalchemy_data_workers < 1:
         raise LocalQuickError("evalchemy_data_workers must be at least 1")
     requested = set(suites)
@@ -239,7 +264,13 @@ def run_local_quick(
         raise LocalQuickError("--evalchemy-python and --evalchemy-dir are required for Evalchemy")
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    tasks = [task for task in load_oellm_tasks() if task.suite in requested]
+    selected_names = tuple(task_names or (SWEEP_TASKS if profile == "sweep" else ()))
+    tasks = [task for task in select_tasks(load_oellm_tasks(), selected_names) if task.suite in requested]
+    missing_suites = sorted(set(selected_names) - {task.task for task in tasks})
+    if missing_suites:
+        raise LocalQuickError(
+            "Selected tasks are unavailable in the requested harness suites: " + ", ".join(missing_suites)
+        )
     batches = batch_tasks(tasks, max_tasks_per_invocation, profile)
     manifest_path = output_dir / "manifest.json"
     manifest: dict[str, Any]
@@ -251,6 +282,9 @@ def run_local_quick(
             or manifest.get("profile", "quick") != profile
         ):
             raise LocalQuickError("Existing manifest belongs to a different model, limit, or profile")
+        existing_selection = manifest.get("task_selection")
+        if existing_selection is not None and list(existing_selection) != list(selected_names):
+            raise LocalQuickError("Existing manifest was created for a different task selection")
         existing_suites = manifest.get("suites") or sorted({task["suite"] for task in manifest.get("tasks", [])})
         if sorted(existing_suites) != sorted(requested):
             raise LocalQuickError("Existing manifest was created for a different harness selection")
@@ -265,6 +299,7 @@ def run_local_quick(
             "suites": sorted(requested),
             "started_at": _now(),
             "tasks": [asdict(task) for task in tasks],
+            "task_selection": list(selected_names),
             "batches": {},
             "evalchemy_quick_policy": {
                 "question_limit": limit,

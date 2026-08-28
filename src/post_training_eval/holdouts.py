@@ -6,6 +6,7 @@ import json
 import re
 import urllib.request
 from collections import defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -111,6 +112,7 @@ def run_endpoint(base_url: str, model: str, suite: str, out: Path, data: str | N
         rows = _sample_by_bucket(rows, samples_per_bucket)
     elif limit:
         rows = rows[:limit]
+    started_at = datetime.now(timezone.utc).isoformat()
     by_bucket: dict[str, list[bool]] = defaultdict(list)
     by_language: dict[str, list[bool]] = defaultdict(list)
     examples = []
@@ -128,7 +130,7 @@ def run_endpoint(base_url: str, model: str, suite: str, out: Path, data: str | N
         by_language[row.get("language", "unknown")].append(passed)
         examples.append({"id": row.get("id"), "bucket": row["bucket"], "language": row.get("language"), "passed": passed, "answer": answer})
     accuracy = lambda values: round(100 * sum(values) / len(values), 4) if values else None
-    report = {"schema_version": 1, "model": model, "endpoint": base_url, "suite": suite, "n": len(rows), "sampling": {"kind": "per-bucket" if samples_per_bucket else ("head-limit" if limit else "full"), "limit": limit, "samples_per_bucket": samples_per_bucket}, "overall_accuracy": accuracy([item for values in by_bucket.values() for item in values]), "by_bucket": {key: accuracy(value) for key, value in sorted(by_bucket.items())}, "by_language": {key: accuracy(value) for key, value in sorted(by_language.items())}, "examples": examples}
+    report = {"schema_version": 1, "model": model, "endpoint": base_url, "suite": suite, "started_at": started_at, "finished_at": datetime.now(timezone.utc).isoformat(), "n": len(rows), "sampling": {"kind": "per-bucket" if samples_per_bucket else ("head-limit" if limit else "full"), "limit": limit, "samples_per_bucket": samples_per_bucket}, "overall_accuracy": accuracy([item for values in by_bucket.values() for item in values]), "by_bucket": {key: accuracy(value) for key, value in sorted(by_bucket.items())}, "by_bucket_n": {key: len(value) for key, value in sorted(by_bucket.items())}, "by_language": {key: accuracy(value) for key, value in sorted(by_language.items())}, "by_language_n": {key: len(value) for key, value in sorted(by_language.items())}, "examples": examples}
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     return report

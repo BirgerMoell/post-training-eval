@@ -66,6 +66,8 @@ def build_plan(ref: CheckpointRef, profile_name: str, limit: int | None = None, 
             item["runnable"] = False
         elif item["driver"] == "openai-endpoint" and ref.format != "openai_endpoint":
             item["blocked_by"] = "Serve this checkpoint behind an OpenAI-compatible endpoint, then plan with openai://BASE_URL#MODEL."
+        elif item["driver"] == "local-quick":
+            item["blocked_by"] = "Supply the pinned workstation harness paths and run pteval local-quick --sweep; the generic planner does not guess environment locations."
         elif item["driver"] == "oellm-eval" and ref.format == "hf_hub" and ref.revision:
             item["blocked_by"] = "oellm-eval does not currently pass Hub revisions; download the immutable snapshot and plan against its local path."
             item["runnable"] = False
@@ -79,6 +81,7 @@ def build_plan(ref: CheckpointRef, profile_name: str, limit: int | None = None, 
             "description": profile["description"],
             "diagnostic": bool(profile.get("diagnostic")),
             "coverage": profile.get("coverage"),
+            "capability_probes": profile.get("capability_probes") or [],
         },
         "steps": steps,
     }

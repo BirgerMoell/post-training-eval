@@ -3,11 +3,13 @@ from pathlib import Path
 
 from post_training_eval.evalchemy_quick_adapter import capped_cpu_count, configure_benchmark, retry_filelock_fork
 from post_training_eval.local_quick import (
+    SWEEP_TASKS,
     TaskSpec,
     batch_tasks,
     build_evalchemy_command,
     build_lm_eval_command,
     evalchemy_max_tokens,
+    select_tasks,
 )
 
 
@@ -82,6 +84,17 @@ class LocalQuickTests(unittest.TestCase):
             profile="fast",
         )
         self.assertEqual(command[command.index("--max_tokens") + 1], "384")
+
+    def test_sweep_selects_exact_curated_registry_tasks(self):
+        registry = [TaskSpec(name, 0, "evalchemy" if name[0].isupper() else "lm-eval-harness") for name in SWEEP_TASKS]
+        registry.append(TaskSpec("AIME24", 0, "evalchemy"))
+        selected = select_tasks(registry, SWEEP_TASKS)
+        self.assertEqual([task.task for task in selected], list(SWEEP_TASKS))
+        self.assertEqual(evalchemy_max_tokens(TaskSpec("GPQADiamond", 0, "evalchemy"), "sweep"), 128)
+
+    def test_sweep_rejects_unknown_task(self):
+        with self.assertRaisesRegex(ValueError, "Unknown oellm-eval task"):
+            select_tasks([TaskSpec("ifeval", 0, "lm-eval-harness")], ["missing-task"])
 
     def test_evalchemy_adapter_caps_questions_and_repetitions(self):
         class Benchmark:

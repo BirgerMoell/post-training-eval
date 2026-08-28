@@ -11,7 +11,8 @@
     {"id": "ruler", "name": "RULER", "metric": "aggregate_accuracy", "direction": "higher", "target": 95, "runner": "external", "status": "adapter-required", "sources": [{"label": "Benchmark & data", "url": "https://github.com/NVIDIA/RULER"}]},
     {"id": "oneruler", "name": "OneRuler multilingual", "metric": "aggregate_accuracy", "direction": "higher", "target": 85, "stretch": 95, "runner": "external", "status": "operational", "sources": [{"label": "Benchmark & data", "url": "https://github.com/mungg/OneRuler"}]},
     {"id": "longbench", "name": "LongBench", "metric": "aggregate_score", "direction": "higher", "target": 50, "stretch": 61, "runner": "external", "status": "adapter-required", "sources": [{"label": "Dataset", "url": "https://huggingface.co/datasets/THUDM/LongBench"}]},
-    {"id": "mrcr-128k", "name": "MRCR 128K", "metric": "accuracy", "direction": "higher", "target": 35, "stretch": 67, "runner": "external", "status": "adapter-required", "sources": [{"label": "Dataset", "url": "https://huggingface.co/datasets/openai/mrcr"}]}
+    {"id": "mrcr-128k", "name": "MRCR 128K", "metric": "accuracy", "direction": "higher", "target": 35, "stretch": 67, "runner": "external", "status": "adapter-required", "sources": [{"label": "Dataset", "url": "https://huggingface.co/datasets/openai/mrcr"}]},
+    {"id": "oellm-long-context-holdouts", "name": "OpenEuroLLM context-retrieval holdouts", "metric": "retrieval_or_abstention_accuracy", "direction": "higher", "target": 80, "stretch": 95, "runner": "openai-endpoint", "status": "operational", "sources": [{"label": "Dataset", "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"}]}
   ],
   "required_slices": ["4K", "32K", "128K", "256K", "five-depth-grid", "distractor-strength", "multilingual"]
 }

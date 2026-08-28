@@ -166,6 +166,22 @@ function renderGate() {
   target.innerHTML = `<p><span class="gate-status ${gate.status}">${status}</span><strong>Latest parent-retention gate</strong> · ${gate.comparison_count} matched measurements</p><span>${escapeHtml(regressions)}</span>`;
 }
 
+function renderSweepContract() {
+  const profile = state.data.sweep_profile;
+  if (!profile) return;
+  const probes = profile.capability_probes || [];
+  const total = probes.reduce((sum, probe) => sum + probe.benchmarks.length, 0);
+  document.querySelector("#sweep-summary").innerHTML = `<div><strong>${probes.length}/9</strong><span>capabilities covered</span></div><div><strong>${total}</strong><span>benchmark probes</span></div><p>${escapeHtml(profile.coverage)}</p>`;
+  document.querySelector("#sweep-probes").innerHTML = probes.map(probe => {
+    const capability = state.data.capabilities.find(item => item.id === probe.capability);
+    const links = probe.benchmarks.map(id => {
+      const benchmark = lookupBenchmark(probe.capability, id);
+      return `<li>${benchmarkNameLink(benchmark, label(id))}</li>`;
+    }).join("");
+    return `<article><span>${escapeHtml(capability?.name || label(probe.capability))}</span><strong>${probe.benchmarks.length}</strong><ul>${links}</ul></article>`;
+  }).join("");
+}
+
 function formatDuration(seconds) {
   if (!Number.isFinite(Number(seconds))) return "—";
   const total = Math.round(Number(seconds));
@@ -315,7 +331,7 @@ async function init() {
   const response = await fetch("data/index.json", { cache: "no-store" });
   if (!response.ok) throw new Error(`Could not load data: ${response.status}`);
   state.data = await response.json();
-  renderScorecards(); renderFastDiagnostics(); renderGate(); renderCapabilityComparison(); renderCapabilities(); populateFilters(); renderResults();
+  renderScorecards(); renderSweepContract(); renderFastDiagnostics(); renderGate(); renderCapabilityComparison(); renderCapabilities(); populateFilters(); renderResults();
   document.querySelector("#score-method").innerHTML = `<strong>${escapeHtml(state.data.score_method.name)}:</strong> ${escapeHtml(state.data.score_method.description)} <span>Excluded: ${escapeHtml(state.data.score_method.exclusions.join(", "))}.</span>`;
   document.querySelector("#target-method").innerHTML = `<strong>${escapeHtml(state.data.target_policy.name)}:</strong> ${escapeHtml(state.data.target_policy.description)} <span>${escapeHtml(state.data.target_policy.gap_definition)}</span>`;
   document.querySelector("#generated").textContent = `Last built ${new Date(state.data.generated_at).toLocaleString()}.`;

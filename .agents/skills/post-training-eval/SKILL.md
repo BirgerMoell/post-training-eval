@@ -18,6 +18,7 @@ Use the repository as the evaluation control plane. Preserve its distinction bet
 
 - Use `smoke` to prove checkpoint and harness compatibility. Treat its scores as diagnostic.
 - Use `local-quick --fast` for two-example-per-task triage with short generation caps; use it to find broken protocols and obvious regressions, not to estimate stable benchmark scores.
+- Use `local-quick --sweep` plus the sweep profile's endpoint holdouts and NIAH steps when the user needs a very small signal across all nine capability contracts. The standard local step selects eight exact registry tasks; the complete sweep contains 19 probes and remains diagnostic.
 - Use `quick` or `local-quick --limit 8` for a broad first comparison across every registered operational task. Explain that it is bounded per task and cannot satisfy a release gate.
 - Use `core` for repeatable checkpoint-development comparisons and parent-retention gates.
 - Use `release` only when required external, safety, multilingual, long-context, agent, and efficiency evidence can be completed or explicitly reported as missing.
@@ -73,7 +74,7 @@ Monitor long runs without starting duplicates:
 
 ## Normalize and compare
 
-Normalize raw harness output into the repository run schema. Use `ingest-lm-eval-dir` for grouped resumable lm-eval output, `ingest-oellm-csv` for a unified OpenEuroLLM collector CSV, and `ingest-local-quick` for a terminal workstation manifest with per-task aggregate saves. Mark every bounded run `diagnostic`. Fast records belong in the dashboard's separate diagnostic matrix and must not enter the main capability aggregate or release target pass counts.
+Normalize raw harness output into the repository run schema. Use `ingest-lm-eval-dir` for grouped resumable lm-eval output, `ingest-oellm-csv` for a unified OpenEuroLLM collector CSV, and `ingest-local-quick` for a terminal workstation manifest with per-task aggregate saves. Use `ingest-endpoint`, `ingest-niah`, and `ingest-inspect` for the other sweep artifacts; these importers keep prompts, answers, secrets, and licensed examples out of published records. Mark every bounded run `diagnostic`. Fast and sweep records must not enter the main capability aggregate or release target pass counts.
 
 Require every measurement to retain model revision, harness and task version, prompt/chat protocol, few-shot count, decoding settings, limit/sample count, language or slice, raw artifact location, and limitations. Refuse comparisons when material protocol fields differ.
 

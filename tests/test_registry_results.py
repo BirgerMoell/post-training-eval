@@ -7,7 +7,7 @@ from pathlib import Path
 from post_training_eval.checkpoints import parse_checkpoint
 from post_training_eval.planner import build_plan
 from post_training_eval.registry import benchmark_index, validate_registry
-from post_training_eval.results import ResultError, _build_model_scorecard, _task_to_benchmark, build_site_data, ingest_lm_eval, ingest_lm_eval_directory, ingest_local_quick, ingest_oellm_csv, publish_run
+from post_training_eval.results import ResultError, _build_model_scorecard, _task_to_benchmark, build_site_data, ingest_checkpoint_inspection, ingest_endpoint_report, ingest_lm_eval, ingest_lm_eval_directory, ingest_local_quick, ingest_niah_report, ingest_oellm_csv, publish_run
 from post_training_eval.gates import compare_runs
 from post_training_eval.holdouts import _sample_by_bucket
 
@@ -19,7 +19,7 @@ class RegistryResultTests(unittest.TestCase):
 
     def test_every_evaluation_has_a_readable_source(self):
         benchmarks = benchmark_index()
-        self.assertEqual(len(benchmarks), 62)
+        self.assertEqual(len(benchmarks), 67)
         self.assertTrue(all(item.get("sources") for item in benchmarks.values()))
         self.assertTrue(all(source["url"].startswith("https://") for item in benchmarks.values() for source in item["sources"]))
         self.assertGreaterEqual(len(benchmarks["maxife"]["sources"]), 2)
@@ -50,6 +50,17 @@ class RegistryResultTests(unittest.TestCase):
         self.assertFalse(survey["runnable"])
         self.assertTrue(holdouts["runnable"])
         self.assertEqual(holdouts["command"][-2:], ["--samples-per-bucket", "2"])
+
+    def test_sweep_profile_covers_every_capability_with_nineteen_probes(self):
+        plan = build_plan(parse_checkpoint("owner/model"), "sweep")
+        probes = plan["profile"]["capability_probes"]
+        self.assertTrue(plan["profile"]["diagnostic"])
+        self.assertEqual({probe["capability"] for probe in probes}, {"coding", "efficiency-release", "grounding-rag", "instruction-chat", "long-context", "multilingual", "reasoning-knowledge", "safety", "tools-agents"})
+        self.assertEqual(sum(len(probe["benchmarks"]) for probe in probes), 19)
+        standard = next(step for step in plan["steps"] if step["id"] == "standard-sweep")
+        self.assertEqual(standard["tasks"], ["ifeval", "sib200_deu_Latn", "sib200_mlt_Latn", "sib200_swe_Latn", "MATH500", "GPQADiamond", "HumanEval", "LiveCodeBench"])
+        self.assertFalse(standard["runnable"])
+        self.assertIn("local-quick --sweep", standard["blocked_by"])
 
     def test_megatron_plan_blocks_eval_until_prepared(self):
         plan = build_plan(parse_checkpoint("megatron:///scratch/model"), "smoke")
@@ -196,6 +207,60 @@ class RegistryResultTests(unittest.TestCase):
         self.assertIsNone(scorecard["aggregate_score"])
         self.assertEqual(scorecard["targets_measured"], 0)
 
+    def test_sweep_diagnostic_never_enters_main_scorecard(self):
+        capabilities = [{"id": "safety", "name": "Safety", "benchmarks": [{"id": "oellm-safety-holdouts", "name": "Safety holdout", "metric": "rubric_pass_rate", "direction": "higher", "target": 90}]}]
+        run = {"run_id": "sweep", "status": "completed", "profile": "sweep", "diagnostic": True, "model": {"id": "owner/model"}, "provenance": {"kind": "fresh-reproduced"}, "metrics": [{"capability": "safety", "benchmark": "oellm-safety-holdouts", "metric": "rubric_pass_rate", "value": 100, "scale": "percentage"}]}
+        scorecard = _build_model_scorecard("owner/model", [run], capabilities)
+        self.assertIsNone(scorecard["aggregate_score"])
+        self.assertEqual(scorecard["targets_measured"], 0)
+
+    def test_endpoint_sweep_ingestion_maps_all_ten_buckets(self):
+        buckets = {
+            "civic_safety": 50,
+            "grounded_qa": 100,
+            "instruction_following": 50,
+            "locale_formatting": 100,
+            "long_context_retrieval": 50,
+            "no_answer": 100,
+            "reasoning_math": 0,
+            "summarization": 50,
+            "tool_calling": 100,
+            "translationese_preference": 50,
+        }
+        raw = {"suite": "oellm-eu-eval-holdouts-v1", "endpoint": "http://localhost:8000/v1", "sampling": {"samples_per_bucket": 2}, "by_bucket": buckets, "by_bucket_n": {key: 2 for key in buckets}, "examples": [{"answer": "private"}]}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "endpoint.json"
+            path.write_text(json.dumps(raw))
+            run = ingest_endpoint_report(path, "owner/model", "sweep-holdouts", "abc", "pteval endpoint-run ...")
+        self.assertEqual(run["profile"], "sweep")
+        self.assertEqual(len(run["metrics"]), 10)
+        self.assertEqual({metric["capability"] for metric in run["metrics"]}, {"safety", "grounding-rag", "instruction-chat", "multilingual", "long-context", "reasoning-knowledge", "tools-agents"})
+        self.assertTrue(all(metric["n"] == 2 for metric in run["metrics"]))
+        self.assertNotIn("examples", run)
+
+    def test_niah_sweep_ingestion_keeps_only_aggregate_metrics(self):
+        raw = {"results": [
+            {"requested_length": 4096, "depth_percent": 50, "retrieval": True, "exact_format": True, "expected": "secret", "answer": "secret"},
+            {"requested_length": 32768, "depth_percent": 50, "retrieval": False, "exact_format": False, "expected": "secret", "answer": "wrong"},
+        ]}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "niah.json"
+            path.write_text(json.dumps(raw))
+            run = ingest_niah_report(path, "owner/model", "sweep-niah", "abc", "pteval niah ...")
+        self.assertEqual(len(run["metrics"]), 4)
+        self.assertEqual({metric["slice"] for metric in run["metrics"]}, {"4096 tokens", "32768 tokens"})
+        self.assertNotIn("results", run)
+
+    def test_checkpoint_inspection_ingestion_records_compatibility(self):
+        raw = {"status": "compatible", "format": "hf_hub", "resolved_revision": "abc", "source_url": "https://huggingface.co/owner/model/tree/abc", "checks": {"config": True, "tokenizer": True, "weights": False}, "architecture": {"model_type": "test"}, "weight_files": ["one.safetensors"]}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "inspect.json"
+            path.write_text(json.dumps(raw))
+            run = ingest_checkpoint_inspection(path, "owner/model", "sweep-inspect", None, "pteval inspect ...")
+        self.assertEqual(run["provenance"]["kind"], "compatibility-check")
+        self.assertEqual(run["metrics"][0]["value"], 66.666667)
+        self.assertEqual(run["model"]["revision"], "abc")
+
     def test_endpoint_quick_sample_covers_every_bucket(self):
         rows = [
             {"id": f"{bucket}-{language}", "bucket": bucket, "language": language}
@@ -213,6 +278,9 @@ class RegistryResultTests(unittest.TestCase):
         self.assertGreater(len(data["runs"]), 0)
         self.assertIn("aggregate_score", data["models"][0])
         self.assertIn("score_method", data)
+        self.assertEqual(data["sweep_profile"]["id"], "sweep")
+        self.assertEqual(len(data["sweep_profile"]["capability_probes"]), 9)
+        self.assertEqual(sum(len(item["benchmarks"]) for item in data["sweep_profile"]["capability_probes"]), 19)
 
     def test_scorecard_prefers_complete_published_evidence_over_diagnostic_alias(self):
         capabilities = [{"id": "instruction-chat", "name": "Instruction & Chat", "benchmarks": [{"id": "ifeval", "name": "IFEval", "direction": "higher"}]}]

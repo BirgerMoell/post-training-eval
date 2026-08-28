@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .registry import benchmark_index, capability_manifests, load_json, repository_root
+from .registry import benchmark_index, capability_manifests, load_json, load_profile, repository_root
 
 
 class ResultError(ValueError):
@@ -30,6 +30,19 @@ PREFERRED_METRICS = (
     "bleu,none",
     "chrf++,none",
 )
+
+HOLDOUT_BUCKET_METRICS = {
+    "civic_safety": ("safety", "oellm-safety-holdouts", "rubric_pass_rate"),
+    "grounded_qa": ("grounding-rag", "oellm-grounding-holdouts", "grounded_qa_accuracy"),
+    "instruction_following": ("instruction-chat", "oellm-instruction-holdouts", "instruction_following_accuracy"),
+    "locale_formatting": ("multilingual", "oellm-locale-holdouts", "locale_format_accuracy"),
+    "long_context_retrieval": ("long-context", "oellm-long-context-holdouts", "retrieval_or_abstention_accuracy"),
+    "no_answer": ("grounding-rag", "oellm-no-answer-holdouts", "correct_abstention_rate"),
+    "reasoning_math": ("reasoning-knowledge", "oellm-reasoning-holdouts", "reasoning_math_accuracy"),
+    "summarization": ("instruction-chat", "oellm-summary-holdouts", "required_points_accuracy"),
+    "tool_calling": ("tools-agents", "oellm-tool-holdouts", "sequence_exact_match"),
+    "translationese_preference": ("multilingual", "oellm-translationese-holdouts", "preference_accuracy"),
+}
 
 
 def _canonical_metric_name(value: str) -> str:
@@ -56,7 +69,7 @@ def _score_evidence_rank(run: dict[str, Any]) -> int:
     kind = (run.get("provenance") or {}).get("kind")
     if kind == "compatibility-check":
         return 0
-    if run.get("profile") == "fast":
+    if run.get("profile") in {"fast", "sweep"}:
         return 0
     base = {"fresh-reproduced": 40, "imported-published": 30}.get(kind, 0)
     return base - 20 if run.get("diagnostic") else base
@@ -661,6 +674,196 @@ def ingest_local_quick(
     return run
 
 
+def ingest_endpoint_report(
+    input_path: Path,
+    model_id: str,
+    run_id: str,
+    model_revision: str | None,
+    source_command: str | None,
+) -> dict[str, Any]:
+    """Normalize aggregate holdout buckets without publishing prompts or answers."""
+    raw = load_json(input_path)
+    if raw.get("suite") != "oellm-eu-eval-holdouts-v1":
+        raise ResultError(f"Unsupported endpoint holdout suite: {raw.get('suite')!r}")
+    by_bucket = raw.get("by_bucket") or {}
+    unknown = sorted(set(by_bucket) - set(HOLDOUT_BUCKET_METRICS))
+    if unknown:
+        raise ResultError(f"Unmapped endpoint holdout bucket(s): {', '.join(unknown)}")
+    counts = raw.get("by_bucket_n") or {}
+    registry = benchmark_index()
+    metrics = []
+    for bucket, value in sorted(by_bucket.items()):
+        if not isinstance(value, (int, float)):
+            continue
+        capability, benchmark_id, metric_name = HOLDOUT_BUCKET_METRICS[bucket]
+        benchmark = registry[benchmark_id]
+        metrics.append({
+            "capability": capability,
+            "benchmark": benchmark_id,
+            "metric": metric_name,
+            "value": round(float(value), 6),
+            "scale": "percentage",
+            "direction": benchmark.get("direction", "higher"),
+            "slice": bucket,
+            "n": counts.get(bucket),
+        })
+    if not metrics:
+        raise ResultError("Endpoint holdout report has no numeric bucket scores")
+    now = datetime.now(timezone.utc).isoformat()
+    run = {
+        "schema_version": 1,
+        "run_id": run_id,
+        "status": "completed",
+        "diagnostic": True,
+        "profile": "sweep",
+        "started_at": raw.get("started_at"),
+        "finished_at": raw.get("finished_at") or now,
+        "model": {"id": model_id, "revision": model_revision, "format": "openai_endpoint"},
+        "provenance": {
+            "kind": "fresh-reproduced",
+            "source": str(input_path),
+            "command": source_command,
+            "harness": "pteval endpoint-run",
+            "protocol": f"deterministic temperature 0; {raw.get('sampling') or {}}",
+        },
+        "environment": {"endpoint": raw.get("endpoint")},
+        "limitations": [
+            "Two-example-per-bucket diagnostic; uncertainty is high and scores cannot satisfy release gates.",
+            "Published evidence contains aggregate scores only; prompts, answers, and protected examples remain in the raw artifact.",
+        ],
+        "diagnostic_summary": {
+            "scheduled_buckets": len(HOLDOUT_BUCKET_METRICS),
+            "completed_buckets": len(metrics),
+            "failed_buckets": len(HOLDOUT_BUCKET_METRICS) - len(metrics),
+            "samples_per_bucket": (raw.get("sampling") or {}).get("samples_per_bucket"),
+        },
+        "metrics": metrics,
+    }
+    errors = validate_result(run)
+    if errors:
+        raise ResultError("; ".join(errors))
+    return run
+
+
+def ingest_niah_report(
+    input_path: Path,
+    model_id: str,
+    run_id: str,
+    model_revision: str | None,
+    source_command: str | None,
+) -> dict[str, Any]:
+    """Normalize deterministic NIAH cases while keeping secrets and answers raw-only."""
+    raw = load_json(input_path)
+    cases = raw.get("results") or []
+    if not cases:
+        raise ResultError("NIAH report has no completed cases")
+    metrics = []
+    for length in sorted({int(item["requested_length"]) for item in cases}):
+        length_cases = [item for item in cases if int(item["requested_length"]) == length]
+        metrics.extend([
+            {
+                "capability": "long-context",
+                "benchmark": "niah-natural",
+                "metric": "full_retrieval_rate",
+                "value": round(100 * sum(bool(item.get("retrieval")) for item in length_cases) / len(length_cases), 6),
+                "scale": "percentage",
+                "direction": "higher",
+                "slice": f"{length} tokens",
+                "n": len(length_cases),
+            },
+            {
+                "capability": "long-context",
+                "benchmark": "niah-exact-format",
+                "metric": "exact_format_rate",
+                "value": round(100 * sum(bool(item.get("exact_format")) for item in length_cases) / len(length_cases), 6),
+                "scale": "percentage",
+                "direction": "higher",
+                "slice": f"{length} tokens",
+                "n": len(length_cases),
+            },
+        ])
+    now = datetime.now(timezone.utc).isoformat()
+    run = {
+        "schema_version": 1,
+        "run_id": run_id,
+        "status": "completed",
+        "diagnostic": True,
+        "profile": "sweep",
+        "finished_at": now,
+        "model": {"id": model_id, "revision": model_revision, "format": "hf"},
+        "provenance": {
+            "kind": "fresh-reproduced",
+            "source": str(input_path),
+            "command": source_command,
+            "harness": "pteval builtin-niah",
+            "protocol": "deterministic natural-word retrieval; one middle-depth case per declared sweep length",
+        },
+        "limitations": [
+            "Sparse diagnostic depth/length grid; use the full five-depth protocol for release evidence.",
+            "Expected secrets, model answers, and prompts remain only in the raw artifact.",
+        ],
+        "diagnostic_summary": {"completed_cases": len(cases), "lengths": sorted({int(item["requested_length"]) for item in cases})},
+        "metrics": metrics,
+    }
+    errors = validate_result(run)
+    if errors:
+        raise ResultError("; ".join(errors))
+    return run
+
+
+def ingest_checkpoint_inspection(
+    input_path: Path,
+    model_id: str,
+    run_id: str,
+    model_revision: str | None,
+    source_command: str | None,
+) -> dict[str, Any]:
+    """Convert the checkpoint inspector output into explicit compatibility evidence."""
+    raw = load_json(input_path)
+    checks = raw.get("checks") or {}
+    if not checks:
+        raise ResultError("Checkpoint inspection has no checks")
+    passed = sum(bool(value) for value in checks.values())
+    value = round(100 * passed / len(checks), 6)
+    now = datetime.now(timezone.utc).isoformat()
+    run = {
+        "schema_version": 1,
+        "run_id": run_id,
+        "status": "completed",
+        "diagnostic": True,
+        "profile": "sweep",
+        "finished_at": now,
+        "model": {"id": model_id, "revision": model_revision or raw.get("resolved_revision"), "format": raw.get("format", "hf")},
+        "provenance": {
+            "kind": "compatibility-check",
+            "source": raw.get("source_url") or raw.get("path") or str(input_path),
+            "command": source_command,
+            "protocol": "pteval checkpoint structure inspection; this is not a model-quality score",
+        },
+        "limitations": ["Compatibility proves required checkpoint artifacts are present; it does not measure serving efficiency or model quality."],
+        "metrics": [{
+            "capability": "efficiency-release",
+            "benchmark": "checkpoint-compatibility",
+            "metric": "checks_pass_rate",
+            "value": value,
+            "scale": "percentage",
+            "direction": "higher",
+            "n": len(checks),
+            "slice": ", ".join(sorted(checks)),
+        }],
+        "checkpoint": {
+            "status": raw.get("status"),
+            "architecture": raw.get("architecture"),
+            "parameter_count": raw.get("parameter_count"),
+            "weight_files": len(raw.get("weight_files") or []),
+        },
+    }
+    errors = validate_result(run)
+    if errors:
+        raise ResultError("; ".join(errors))
+    return run
+
+
 def publish_run(source: Path, root: Path | None = None) -> Path:
     base = root or repository_root()
     run = load_json(source)
@@ -713,7 +916,7 @@ def build_site_data(root: Path | None = None) -> dict[str, Any]:
             "name": "Capability evidence index",
             "range": "0–100",
             "description": "Percentage quality metrics only. Lower-is-better percentages are inverted. Measurements are averaged by benchmark, then capability, then equally across capabilities with evidence.",
-            "exclusions": ["Missing capabilities", "Compatibility checks", "Fast diagnostic triage", "Ranks", "Latency", "Throughput", "Unscaled benchmark scores"],
+            "exclusions": ["Missing capabilities", "Compatibility checks", "Fast and sweep diagnostic triage", "Ranks", "Latency", "Throughput", "Unscaled benchmark scores"],
         },
         "target_policy": {
             "id": "program-floor-v1",
@@ -722,6 +925,7 @@ def build_site_data(root: Path | None = None) -> dict[str, Any]:
             "gap_definition": "Positive means the model is beyond the target; negative means it is short of the target. Missing evidence has no gap and never passes.",
         },
         "capabilities": capabilities,
+        "sweep_profile": load_profile("sweep", base),
         "models": sorted(serial_models, key=lambda item: item["id"]),
         "runs": runs,
         "gates": gates,

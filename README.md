@@ -138,6 +138,42 @@ pteval ingest-local-quick \
 
 Fast records appear in their own dashboard matrix and are excluded from the release-oriented aggregate capability index and target pass counts.
 
+### Run the nine-capability sweep
+
+The `sweep` profile is the smallest protocol that touches every capability contract. It contains 19 probes but keeps the expensive parts bounded: two examples for each selected standard task and multilingual holdout bucket, plus one deterministic NIAH case at 4K and 32K. It is diagnostic evidence and never enters the main capability index or release target counts.
+
+The standard local portion selects exactly eight tasks from the pinned `oellm-eval` registry: IFEval; SIB-200 in Swedish, German, and Maltese; MATH-500; GPQA Diamond; HumanEval; and LiveCodeBench. It does not expand the complete 438-row registry:
+
+```bash
+PYTHONPATH=/path/to/oellm-eval pteval local-quick \
+  --model /immutable/hf/snapshot \
+  --output-dir runs/model-sweep-standard \
+  --lm-python /envs/lm-eval/bin/python \
+  --include-path /path/to/oellm-eval/oellm/resources/custom_lm_eval_tasks \
+  --lighteval-bin /envs/lighteval/bin/lighteval \
+  --evalchemy-python /envs/evalchemy/bin/python \
+  --evalchemy-dir /path/to/evalchemy \
+  --sweep --gpu 0 --min-free-gb 20
+```
+
+The remaining safety, grounding, tool-use, multilingual behavior, instruction, reasoning, and context-retrieval probes use two deterministic examples from each of the ten `oellm-eu-eval-holdouts-v1` buckets. Serve the same immutable checkpoint through an OpenAI-compatible endpoint and run:
+
+```bash
+pteval endpoint-run \
+  --base-url http://127.0.0.1:8000/v1 \
+  --model served-model \
+  --samples-per-bucket 2 \
+  --out runs/raw/model-sweep-holdouts.json
+
+python3 -m post_training_eval.niah \
+  --model /immutable/hf/snapshot \
+  --lengths 4096,32768 \
+  --depths 50 \
+  --out runs/raw/model-sweep-niah.json
+```
+
+Generate the full executable/blocking plan with `pteval plan --model MODEL --profile sweep`. Normalize each retained artifact with `ingest-local-quick`, `ingest-endpoint`, `ingest-niah`, or `ingest-inspect`. These importers omit prompts, model answers, NIAH secrets, and licensed examples from the published records.
+
 At the currently pinned Lighteval revision, keep `xxhash<4` in its isolated tool environment; `xxhash` 4.x rejects the string hashing call used while saving per-example details. The runner was smoke-tested with `xxhash==3.6.0`.
 
 ## Run on LUMI with `oellm-eval`
@@ -180,6 +216,7 @@ The converter is passed an argument array without a shell. After conversion, the
 ## Profiles
 
 - `smoke` — checkpoint, 16-example reasoning/instruction and three-language multilingual stack check, 4K NIAH. Diagnostic only.
+- `sweep` — 19 very small probes across all nine capability contracts. Diagnostic only; intended for rapid checkpoint comparison.
 - `quick` / `--quick` — every registered `oellm-eval` task with a small per-task cap, four context lengths, and stratified endpoint holdouts. Diagnostic only.
 - `core` — the per-checkpoint development suite and retention gate.
 - `release` — full multilingual coverage plus required external safety, arena, agent, long-context, and efficiency evidence.

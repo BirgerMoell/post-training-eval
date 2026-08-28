@@ -8,7 +8,7 @@
     "exclusions": [
       "Missing capabilities",
       "Compatibility checks",
-      "Fast diagnostic triage",
+      "Fast and sweep diagnostic triage",
       "Ranks",
       "Latency",
       "Throughput",
@@ -253,6 +253,22 @@
           "target": 80,
           "stretch": 92,
           "runner": "openai-endpoint",
+          "status": "adapter-required",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+            }
+          ]
+        },
+        {
+          "id": "oellm-no-answer-holdouts",
+          "name": "OpenEuroLLM no-answer holdouts",
+          "metric": "correct_abstention_rate",
+          "direction": "higher",
+          "target": 80,
+          "stretch": 92,
+          "runner": "openai-endpoint",
           "status": "operational",
           "sources": [
             {
@@ -370,6 +386,22 @@
               "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
             }
           ]
+        },
+        {
+          "id": "oellm-summary-holdouts",
+          "name": "OpenEuroLLM constrained summarization holdouts",
+          "metric": "required_points_accuracy",
+          "direction": "higher",
+          "target": 70,
+          "stretch": 88,
+          "runner": "openai-endpoint",
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+            }
+          ]
         }
       ]
     },
@@ -473,6 +505,22 @@
             {
               "label": "Dataset",
               "url": "https://huggingface.co/datasets/openai/mrcr"
+            }
+          ]
+        },
+        {
+          "id": "oellm-long-context-holdouts",
+          "name": "OpenEuroLLM context-retrieval holdouts",
+          "metric": "retrieval_or_abstention_accuracy",
+          "direction": "higher",
+          "target": 80,
+          "stretch": 95,
+          "runner": "openai-endpoint",
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
             }
           ]
         }
@@ -762,6 +810,38 @@
             {
               "label": "Dataset",
               "url": "https://huggingface.co/datasets/mrlbenchmarks/global-piqa-nonparallel"
+            }
+          ]
+        },
+        {
+          "id": "oellm-locale-holdouts",
+          "name": "OpenEuroLLM locale-formatting holdouts",
+          "metric": "locale_format_accuracy",
+          "direction": "higher",
+          "target": 85,
+          "stretch": 95,
+          "runner": "openai-endpoint",
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
+            }
+          ]
+        },
+        {
+          "id": "oellm-translationese-holdouts",
+          "name": "OpenEuroLLM translationese-preference holdouts",
+          "metric": "preference_accuracy",
+          "direction": "higher",
+          "target": 75,
+          "stretch": 90,
+          "runner": "openai-endpoint",
+          "status": "operational",
+          "sources": [
+            {
+              "label": "Dataset",
+              "url": "https://huggingface.co/datasets/birgermoell/oellm-eu-eval-holdouts-v1"
             }
           ]
         }
@@ -1178,6 +1258,139 @@
       ]
     }
   ],
+  "sweep_profile": {
+    "schema_version": 1,
+    "id": "sweep",
+    "description": "Very small nine-capability diagnostic sweep for rapid checkpoint comparison.",
+    "diagnostic": true,
+    "coverage": "Nineteen probes cover all nine capability contracts. Standard and holdout tasks use at most two examples per task or bucket; long-context uses one deterministic case at 4K and 32K.",
+    "capability_probes": [
+      {
+        "capability": "coding",
+        "benchmarks": [
+          "humaneval",
+          "livecodebench"
+        ]
+      },
+      {
+        "capability": "efficiency-release",
+        "benchmarks": [
+          "checkpoint-compatibility"
+        ]
+      },
+      {
+        "capability": "grounding-rag",
+        "benchmarks": [
+          "oellm-grounding-holdouts",
+          "oellm-no-answer-holdouts"
+        ]
+      },
+      {
+        "capability": "instruction-chat",
+        "benchmarks": [
+          "ifeval",
+          "oellm-instruction-holdouts",
+          "oellm-summary-holdouts"
+        ]
+      },
+      {
+        "capability": "long-context",
+        "benchmarks": [
+          "niah-natural",
+          "niah-exact-format",
+          "oellm-long-context-holdouts"
+        ]
+      },
+      {
+        "capability": "multilingual",
+        "benchmarks": [
+          "sib-200",
+          "oellm-locale-holdouts",
+          "oellm-translationese-holdouts"
+        ]
+      },
+      {
+        "capability": "reasoning-knowledge",
+        "benchmarks": [
+          "math-500",
+          "gpqa-diamond",
+          "oellm-reasoning-holdouts"
+        ]
+      },
+      {
+        "capability": "safety",
+        "benchmarks": [
+          "oellm-safety-holdouts"
+        ]
+      },
+      {
+        "capability": "tools-agents",
+        "benchmarks": [
+          "oellm-tool-holdouts"
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "checkpoint",
+        "capability": "efficiency-release",
+        "driver": "inspect",
+        "required": true
+      },
+      {
+        "id": "standard-sweep",
+        "capabilities": [
+          "multilingual",
+          "instruction-chat",
+          "reasoning-knowledge",
+          "coding"
+        ],
+        "driver": "local-quick",
+        "tasks": [
+          "ifeval",
+          "sib200_deu_Latn",
+          "sib200_mlt_Latn",
+          "sib200_swe_Latn",
+          "MATH500",
+          "GPQADiamond",
+          "HumanEval",
+          "LiveCodeBench"
+        ],
+        "limit": 2,
+        "required": true,
+        "notes": "Run pteval local-quick --sweep with the workstation's pinned lm-eval and Evalchemy runtime paths. The command is intentionally not guessed by the generic planner."
+      },
+      {
+        "id": "holdout-sweep",
+        "capabilities": [
+          "safety",
+          "multilingual",
+          "instruction-chat",
+          "reasoning-knowledge",
+          "grounding-rag",
+          "tools-agents",
+          "long-context"
+        ],
+        "driver": "openai-endpoint",
+        "suite": "oellm-eu-eval-holdouts-v1",
+        "samples_per_bucket": 2,
+        "required": true
+      },
+      {
+        "id": "long-context-sweep",
+        "capability": "long-context",
+        "driver": "builtin-niah",
+        "lengths": [
+          4096,
+          32768
+        ],
+        "depths": [
+          50
+        ],
+        "required": true
+      }
+    ]
+  },
   "models": [
     {
       "id": "birgermoell/oellm-9b-256k-reasoning-v1",
@@ -1204,7 +1417,7 @@
       "scored_benchmark_count": 5,
       "targets_met": 1,
       "targets_measured": 6,
-      "target_benchmark_count": 62,
+      "target_benchmark_count": 67,
       "target_status": "missed",
       "capability_scores": [
         {
@@ -1392,7 +1605,7 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 0,
-          "target_benchmark_count": 4,
+          "target_benchmark_count": 5,
           "target_status": "not-measured",
           "benchmarks": [
             {
@@ -1444,6 +1657,22 @@
               "target_status": "not-measured"
             },
             {
+              "id": "oellm-no-answer-holdouts",
+              "name": "OpenEuroLLM no-answer holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 80,
+              "target_metric": "correct_abstention_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
               "id": "ragas-faithfulness",
               "name": "RAGAS faithfulness",
               "score": null,
@@ -1470,7 +1699,7 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 1,
-          "target_benchmark_count": 6,
+          "target_benchmark_count": 7,
           "target_status": "missed",
           "benchmarks": [
             {
@@ -1572,6 +1801,22 @@
               "target_gap": null,
               "target_scale": null,
               "target_status": "not-measured"
+            },
+            {
+              "id": "oellm-summary-holdouts",
+              "name": "OpenEuroLLM constrained summarization holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 70,
+              "target_metric": "required_points_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
             }
           ]
         },
@@ -1584,7 +1829,7 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 0,
-          "target_benchmark_count": 6,
+          "target_benchmark_count": 7,
           "target_status": "not-measured",
           "benchmarks": [
             {
@@ -1652,6 +1897,22 @@
               "target_status": "not-measured"
             },
             {
+              "id": "oellm-long-context-holdouts",
+              "name": "OpenEuroLLM context-retrieval holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 80,
+              "target_metric": "retrieval_or_abstention_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
               "id": "oneruler",
               "name": "OneRuler multilingual",
               "score": null,
@@ -1694,7 +1955,7 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 0,
-          "target_benchmark_count": 16,
+          "target_benchmark_count": 18,
           "target_status": "not-measured",
           "benchmarks": [
             {
@@ -1819,6 +2080,38 @@
               "diagnostic_only": false,
               "target": 50,
               "target_metric": "exact_match",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "oellm-locale-holdouts",
+              "name": "OpenEuroLLM locale-formatting holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 85,
+              "target_metric": "locale_format_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "oellm-translationese-holdouts",
+              "name": "OpenEuroLLM translationese-preference holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "preference_accuracy",
               "target_direction": "higher",
               "target_value": null,
               "target_gap": null,
@@ -2378,7 +2671,7 @@
       "scored_benchmark_count": 11,
       "targets_met": 2,
       "targets_measured": 12,
-      "target_benchmark_count": 62,
+      "target_benchmark_count": 67,
       "target_status": "missed",
       "capability_scores": [
         {
@@ -2566,7 +2859,7 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 1,
-          "target_benchmark_count": 4,
+          "target_benchmark_count": 5,
           "target_status": "missed",
           "benchmarks": [
             {
@@ -2622,6 +2915,22 @@
               "target_status": "missed"
             },
             {
+              "id": "oellm-no-answer-holdouts",
+              "name": "OpenEuroLLM no-answer holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 80,
+              "target_metric": "correct_abstention_rate",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
               "id": "ragas-faithfulness",
               "name": "RAGAS faithfulness",
               "score": null,
@@ -2648,7 +2957,7 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 2,
-          "target_benchmark_count": 6,
+          "target_benchmark_count": 7,
           "target_status": "missed",
           "benchmarks": [
             {
@@ -2754,6 +3063,22 @@
               "target_gap": -11.8,
               "target_scale": "percentage",
               "target_status": "missed"
+            },
+            {
+              "id": "oellm-summary-holdouts",
+              "name": "OpenEuroLLM constrained summarization holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 70,
+              "target_metric": "required_points_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
             }
           ]
         },
@@ -2766,7 +3091,7 @@
           "diagnostic_only": false,
           "targets_met": 1,
           "targets_measured": 2,
-          "target_benchmark_count": 6,
+          "target_benchmark_count": 7,
           "target_status": "missed",
           "benchmarks": [
             {
@@ -2842,6 +3167,22 @@
               "target_status": "met"
             },
             {
+              "id": "oellm-long-context-holdouts",
+              "name": "OpenEuroLLM context-retrieval holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 80,
+              "target_metric": "retrieval_or_abstention_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
               "id": "oneruler",
               "name": "OneRuler multilingual",
               "score": null,
@@ -2884,7 +3225,7 @@
           "diagnostic_only": false,
           "targets_met": 0,
           "targets_measured": 0,
-          "target_benchmark_count": 16,
+          "target_benchmark_count": 18,
           "target_status": "not-measured",
           "benchmarks": [
             {
@@ -3009,6 +3350,38 @@
               "diagnostic_only": false,
               "target": 50,
               "target_metric": "exact_match",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "oellm-locale-holdouts",
+              "name": "OpenEuroLLM locale-formatting holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 85,
+              "target_metric": "locale_format_accuracy",
+              "target_direction": "higher",
+              "target_value": null,
+              "target_gap": null,
+              "target_scale": null,
+              "target_status": "not-measured"
+            },
+            {
+              "id": "oellm-translationese-holdouts",
+              "name": "OpenEuroLLM translationese-preference holdouts",
+              "score": null,
+              "measurement_count": 0,
+              "evidence_runs": [],
+              "evidence_kinds": [],
+              "diagnostic_only": false,
+              "target": 75,
+              "target_metric": "preference_accuracy",
               "target_direction": "higher",
               "target_value": null,
               "target_gap": null,
