@@ -6,6 +6,10 @@ A capability-driven evaluation control plane for Hugging Face and Megatron check
 
 **[Install or inspect the AI-agent skill →](https://birgermoell.github.io/post-training-eval/skill.html)**
 
+The [LUMI SFT–DPO needle diagnostic](docs/DPO_NEEDLE_LUMI_RESULTS.md) includes
+paired raw outputs and explains why its zero-score floor cannot establish a
+long-context regression or retention claim.
+
 This repository deliberately separates three kinds of evidence:
 
 - **Fresh reproduced** — created by a runner from a pinned checkpoint revision and retained raw artifacts.

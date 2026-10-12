@@ -1,0 +1,160 @@
+{
+  "protocol": {
+    "version": "paired-needle-v3",
+    "tokenizer": "/flash/project_465002530/users/bmoell/helpsteer3-dpo/releases/oellm-9b-threeway-dpo-full-v1",
+    "models": {
+      "sft": "/scratch/project_465002530/users/bmoell/helpsteer3-dpo/artifacts/model",
+      "dpo": "/flash/project_465002530/users/bmoell/helpsteer3-dpo/releases/oellm-9b-threeway-dpo-full-v1"
+    },
+    "lengths": [
+      512,
+      2048,
+      8192
+    ],
+    "depths": [
+      50
+    ],
+    "seeds": [
+      1
+    ],
+    "max_new_tokens": 48,
+    "prompt_format": "chat",
+    "chat_template": "user, add_generation_prompt=True, enable_thinking=False",
+    "decoding": "greedy",
+    "attn_implementation": "flash_attention_2"
+  },
+  "cases": [
+    {
+      "requested_length": 512,
+      "actual_length": 502,
+      "depth_percent": 50,
+      "seed": 1,
+      "record": "record-c0cd3734",
+      "expected": "NIAH-9437B276DEDB",
+      "prompt_sha256": "26e306b66d9ed604ad90aa579c8696c33544f01977c0f22b550a45379d331ee8",
+      "filler_blocks": 17,
+      "blocks_before_needle": 8
+    },
+    {
+      "requested_length": 2048,
+      "actual_length": 2031,
+      "depth_percent": 50,
+      "seed": 1,
+      "record": "record-bc46ae4a",
+      "expected": "NIAH-C1C7D0A14440",
+      "prompt_sha256": "1c43e0fe3cd08973e0ec89252ef91079a6cb0493146ccb4302000820cbd66247",
+      "filler_blocks": 80,
+      "blocks_before_needle": 40
+    },
+    {
+      "requested_length": 8192,
+      "actual_length": 8179,
+      "depth_percent": 50,
+      "seed": 1,
+      "record": "record-92bc16a8",
+      "expected": "NIAH-C00AFDC57E90",
+      "prompt_sha256": "35ac7744f02fc8c225af9c9aa1613d9ee0f022ce6fefa764c476afca3e72aeb7",
+      "filler_blocks": 333,
+      "blocks_before_needle": 166
+    }
+  ],
+  "results": [
+    {
+      "model": "sft",
+      "requested_length": 512,
+      "actual_length": 502,
+      "depth_percent": 50,
+      "seed": 1,
+      "prompt_sha256": "26e306b66d9ed604ad90aa579c8696c33544f01977c0f22b550a45379d331ee8",
+      "expected": "NIAH-9437B276DEDB",
+      "answer": "NIAH-9437B276DEDB",
+      "raw_answer": "NIAH-9437B276DEDB<end_of_turn>",
+      "retrieval": true,
+      "exact_format": true,
+      "generated_tokens": 15
+    },
+    {
+      "model": "sft",
+      "requested_length": 2048,
+      "actual_length": 2031,
+      "depth_percent": 50,
+      "seed": 1,
+      "prompt_sha256": "1c43e0fe3cd08973e0ec89252ef91079a6cb0493146ccb4302000820cbd66247",
+      "expected": "NIAH-C1C7D0A14440",
+      "answer": "",
+      "raw_answer": "<end_of_turn>",
+      "retrieval": false,
+      "exact_format": false,
+      "generated_tokens": 1
+    },
+    {
+      "model": "sft",
+      "requested_length": 8192,
+      "actual_length": 8179,
+      "depth_percent": 50,
+      "seed": 1,
+      "prompt_sha256": "35ac7744f02fc8c225af9c9aa1613d9ee0f022ce6fefa764c476afca3e72aeb7",
+      "expected": "NIAH-C00AFDC57E90",
+      "answer": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "raw_answer": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "retrieval": false,
+      "exact_format": false,
+      "generated_tokens": 48
+    },
+    {
+      "model": "dpo",
+      "requested_length": 512,
+      "actual_length": 502,
+      "depth_percent": 50,
+      "seed": 1,
+      "prompt_sha256": "26e306b66d9ed604ad90aa579c8696c33544f01977c0f22b550a45379d331ee8",
+      "expected": "NIAH-9437B276DEDB",
+      "answer": "NIAH-9437B276DEDB",
+      "raw_answer": "NIAH-9437B276DEDB<end_of_turn>",
+      "retrieval": true,
+      "exact_format": true,
+      "generated_tokens": 15
+    },
+    {
+      "model": "dpo",
+      "requested_length": 2048,
+      "actual_length": 2031,
+      "depth_percent": 50,
+      "seed": 1,
+      "prompt_sha256": "1c43e0fe3cd08973e0ec89252ef91079a6cb0493146ccb4302000820cbd66247",
+      "expected": "NIAH-C1C7D0A14440",
+      "answer": "",
+      "raw_answer": "<end_of_turn>",
+      "retrieval": false,
+      "exact_format": false,
+      "generated_tokens": 1
+    },
+    {
+      "model": "dpo",
+      "requested_length": 8192,
+      "actual_length": 8179,
+      "depth_percent": 50,
+      "seed": 1,
+      "prompt_sha256": "35ac7744f02fc8c225af9c9aa1613d9ee0f022ce6fefa764c476afca3e72aeb7",
+      "expected": "NIAH-C00AFDC57E90",
+      "answer": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "raw_answer": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "retrieval": false,
+      "exact_format": false,
+      "generated_tokens": 48
+    }
+  ],
+  "summary": {
+    "sft": {
+      "cases": 3,
+      "retrieved": 1,
+      "exact_format": 1
+    },
+    "dpo": {
+      "cases": 3,
+      "retrieved": 1,
+      "exact_format": 1
+    }
+  },
+  "partial": false
+}
