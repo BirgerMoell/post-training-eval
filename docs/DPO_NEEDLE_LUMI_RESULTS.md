@@ -7,44 +7,118 @@ retrieved it in a separate 512-token control. Because the longer test has a
 zero-score floor for both models, it cannot establish whether DPO retained or
 degraded long-context capability.
 
-## Results by model
+## What the models were asked
 
-| Checkpoint | 512-token control | 2K grid | 8K grid | 16K grid | Longer-context total |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| SFT | 1/1 | 0/3 | 0/3 | 0/3 | 0/9 |
-| DPO | 1/1 | 0/3 | 0/3 | 0/3 | 0/9 |
+Each input was one chat **user message**: an archive preface, numbered filler
+entries, one fact of the form `Archive note: the access code for RECORD is
+CODE.`, more entries, then `What is the access code for RECORD? Reply with only
+the code.` The complete, verbatim user messages for the [512-token passing
+control](examples/dpo-needle-512-depth50-user-message.txt) and the [2,048-token
+failing case at 50% depth](examples/dpo-needle-2048-depth50-user-message.txt)
+are included in this repository. They were reconstructed deterministically
+from the pinned harness and saved case metadata, because the raw JSON recorded
+prompt hashes rather than full prompt text. These are the exact message *contents*;
+the shared tokenizer then applied its chat template and assistant-generation
+prefix. Both checkpoints received the same resulting token IDs for each case.
+The linked text files have a conventional terminal file newline; the actual
+user messages ended immediately after the final period in the question.
 
-Each fraction is successful exact-code retrievals / cases. The 512-token
-control is from the pilot, not an additional grid case. At every grid length,
-each model saw the same three prompts, with the needle at 10%, 50%, and 90%
-depth. There was only one seed, so these counts are diagnostic observations,
-not estimates of general accuracy.
+Here is the **entire 512-token control user message** (502 tokens after chat
+formatting):
 
-## What each model generated
+```text
+Archive volume 240891. Read the archive before answering.
+Entry 00000. A coastal survey recorded tide tables, harbor maintenance, and ferry timetables.
+Entry 00001. The museum catalog describes ceramics, maps, paintings, and conservation notes.
+Entry 00002. The agricultural register discusses soil samples, orchards, rainfall, and seed varieties.
+Entry 00003. The library ledger tracks book repairs, donations, shelving, and reading-room hours.
+Entry 00004. A transport bulletin summarizes roadworks, bicycle lanes, and station accessibility.
+Entry 00005. The botanical field notes describe moss, oak trees, wildflowers, and greenhouse care.
+Entry 00006. The astronomy newsletter lists public lectures, sky conditions, and telescope repairs.
+Entry 00007. A municipal notice covers recycling routes, street lighting, and park maintenance.
+Archive note: the access code for record-c0cd3734 is NIAH-9437B276DEDB.
+Entry 00008. The music program announces rehearsals, venue changes, and instrument storage.
+Entry 00009. The town archive lists routine reports about bridges, libraries, gardens, and meeting schedules.
+Entry 00010. A coastal survey recorded tide tables, harbor maintenance, and ferry timetables.
+Entry 00011. The museum catalog describes ceramics, maps, paintings, and conservation notes.
+Entry 00012. The agricultural register discusses soil samples, orchards, rainfall, and seed varieties.
+Entry 00013. The library ledger tracks book repairs, donations, shelving, and reading-room hours.
+Entry 00014. A transport bulletin summarizes roadworks, bicycle lanes, and station accessibility.
+Entry 00015. The botanical field notes describe moss, oak trees, wildflowers, and greenhouse care.
+Entry 00016. The astronomy newsletter lists public lectures, sky conditions, and telescope repairs.
 
-The prompt was a synthetic archive containing one access-code sentence amid
-unrelated entries, followed by “What is the access code for [record]? Reply with
-only the code.” The table describes the **raw generated text**, before removing
-the end-of-turn marker. `\n × 48` means 48 newline characters, not the literal
-characters `\` and `n`.
+What is the access code for record-c0cd3734? Reply with only the code.
+```
 
-| Token ceiling (actual) | Depth | Expected code | SFT raw output | SFT retrieved? | DPO raw output | DPO retrieved? |
-| --- | ---: | --- | --- | --- | --- | --- |
-| 512 (502; pilot control) | 50% | `NIAH-9437B276DEDB` | `NIAH-9437B276DEDB<end_of_turn>` | Yes | `NIAH-9437B276DEDB<end_of_turn>` | Yes |
-| 2,048 (2,035) | 10% | `NIAH-0E308D157B8B` | `<end_of_turn>` | No | `<end_of_turn>` | No |
-| 2,048 (2,031) | 50% | `NIAH-C1C7D0A14440` | `<end_of_turn>` | No | `<end_of_turn>` | No |
-| 2,048 (2,034) | 90% | `NIAH-8044ED98B5D7` | `<end_of_turn>` | No | `<end_of_turn>` | No |
-| 8,192 (8,181) | 10% | `NIAH-AEA9524DE948` | `\n × 48` | No | `\n × 48` | No |
-| 8,192 (8,179) | 50% | `NIAH-C00AFDC57E90` | `\n × 48` | No | `\n × 48` | No |
-| 8,192 (8,180) | 90% | `NIAH-890A5604EBB1` | `\n × 48` | No | `\n × 48` | No |
-| 16,384 (16,367) | 10% | `NIAH-8CC99D11741D` | `\n × 48` | No | `\n\n\n<end_of_turn>` | No |
-| 16,384 (16,370) | 50% | `NIAH-DBA0334BB7D2` | `Entry 6666666666666666666666666666666666666666666666` | No | Same as SFT | No |
-| 16,384 (16,372) | 90% | `NIAH-5285B027C313` | `\n × 48` | No | `\n × 48` | No |
+SFT and DPO each returned exactly
+`NIAH-9437B276DEDB<end_of_turn>` on that message.
 
-At 2K, both models immediately emitted the end-of-turn marker. At 8K, both
-generated only newlines until the 48-token limit. At 16K, neither produced a
-correct code; their outputs differed only in the 10%-depth case. “Same as SFT”
-in the 16K/50% row means the literal `Entry 666...` string in the SFT column.
+For the 2,048-token example, the fact and final question were exactly:
+
+```text
+Archive note: the access code for record-bc46ae4a is NIAH-C1C7D0A14440.
+...
+What is the access code for record-bc46ae4a? Reply with only the code.
+```
+
+The `...` above is an explanatory omission of intervening archive entries,
+**not** part of the actual prompt; use the linked file for the complete message
+(apart from its terminal file newline).
+SFT and DPO each returned exactly `<end_of_turn>` on this 2,048-token message:
+neither output contained the expected `NIAH-C1C7D0A14440`.
+The model outputs below are the raw generated text, including any
+`<end_of_turn>` marker. `\n × 48` means exactly 48 newline characters, not the
+literal characters `\` and `n`. The 512-token row is a separate pilot control;
+the other nine rows are the complete grid. “Actual” is the tokenized prompt
+length, including chat formatting. Every case used seed `1`.
+
+## SFT checkpoint results
+
+[`Neonkraft/oellm-9b-256k-theta64m-prelude-anneal300b-instruct-sft`](https://huggingface.co/Neonkraft/oellm-9b-256k-theta64m-prelude-anneal300b-instruct-sft)
+at revision `85bf18fb4f0bee6ac6270f06b1d1c6b3be200f31` retrieved the
+code in the 512-token control (1/1), but in none of the 2K, 8K, or 16K cases
+(0/3 at each length; 0/9 overall in the grid).
+
+| Ceiling (actual tokens) | Depth | Record / expected answer | SFT raw result | Retrieved? |
+| --- | ---: | --- | --- | --- |
+| 512 (502; control) | 50% | `record-c0cd3734` / `NIAH-9437B276DEDB` | `NIAH-9437B276DEDB<end_of_turn>` | Yes |
+| 2,048 (2,035) | 10% | `record-03821669` / `NIAH-0E308D157B8B` | `<end_of_turn>` | No |
+| 2,048 (2,031) | 50% | `record-bc46ae4a` / `NIAH-C1C7D0A14440` | `<end_of_turn>` | No |
+| 2,048 (2,034) | 90% | `record-596242e6` / `NIAH-8044ED98B5D7` | `<end_of_turn>` | No |
+| 8,192 (8,181) | 10% | `record-086d097c` / `NIAH-AEA9524DE948` | `\n × 48` | No |
+| 8,192 (8,179) | 50% | `record-92bc16a8` / `NIAH-C00AFDC57E90` | `\n × 48` | No |
+| 8,192 (8,180) | 90% | `record-2c2bb6b5` / `NIAH-890A5604EBB1` | `\n × 48` | No |
+| 16,384 (16,367) | 10% | `record-04bb6db8` / `NIAH-8CC99D11741D` | `\n × 48` | No |
+| 16,384 (16,370) | 50% | `record-2194c409` / `NIAH-DBA0334BB7D2` | `Entry 6666666666666666666666666666666666666666666666` | No |
+| 16,384 (16,372) | 90% | `record-3179649f` / `NIAH-5285B027C313` | `\n × 48` | No |
+
+For example, on the linked 2,048-token prompt, SFT's **entire response** was
+`<end_of_turn>`—it did not produce an access code.
+
+## DPO checkpoint results
+
+[`birgermoell/oellm-9b-threeway-dpo-full-v1`](https://huggingface.co/birgermoell/oellm-9b-threeway-dpo-full-v1)
+at revision `df4ca88030163946040f34b7f238503707906a97` also retrieved the
+code in the 512-token control (1/1), but in none of the 2K, 8K, or 16K cases
+(0/3 at each length; 0/9 overall in the grid).
+
+| Ceiling (actual tokens) | Depth | Record / expected answer | DPO raw result | Retrieved? |
+| --- | ---: | --- | --- | --- |
+| 512 (502; control) | 50% | `record-c0cd3734` / `NIAH-9437B276DEDB` | `NIAH-9437B276DEDB<end_of_turn>` | Yes |
+| 2,048 (2,035) | 10% | `record-03821669` / `NIAH-0E308D157B8B` | `<end_of_turn>` | No |
+| 2,048 (2,031) | 50% | `record-bc46ae4a` / `NIAH-C1C7D0A14440` | `<end_of_turn>` | No |
+| 2,048 (2,034) | 90% | `record-596242e6` / `NIAH-8044ED98B5D7` | `<end_of_turn>` | No |
+| 8,192 (8,181) | 10% | `record-086d097c` / `NIAH-AEA9524DE948` | `\n × 48` | No |
+| 8,192 (8,179) | 50% | `record-92bc16a8` / `NIAH-C00AFDC57E90` | `\n × 48` | No |
+| 8,192 (8,180) | 90% | `record-2c2bb6b5` / `NIAH-890A5604EBB1` | `\n × 48` | No |
+| 16,384 (16,367) | 10% | `record-04bb6db8` / `NIAH-8CC99D11741D` | `\n\n\n<end_of_turn>` | No |
+| 16,384 (16,370) | 50% | `record-2194c409` / `NIAH-DBA0334BB7D2` | `Entry 6666666666666666666666666666666666666666666666` | No |
+| 16,384 (16,372) | 90% | `record-3179649f` / `NIAH-5285B027C313` | `\n × 48` | No |
+
+On that *same* linked 2,048-token prompt, DPO's **entire response** was also
+`<end_of_turn>`. At 16K/10% depth its result differed from SFT's, but neither
+contained the requested code. A shared zero-score floor is not evidence that
+their long-context abilities are equal.
 
 The [pilot raw JSON](../runs/dpo-needle-pilot-lumi-v1.json) contains all six
 512/2K/8K responses. The [grid raw JSON](../runs/dpo-needle-grid-lumi-v1.json)
