@@ -7,7 +7,20 @@ retrieved it in a separate 512-token control. Because the longer test has a
 zero-score floor for both models, it cannot establish whether DPO retained or
 degraded long-context capability.
 
-## What failed
+## Results by model
+
+| Checkpoint | 512-token control | 2K grid | 8K grid | 16K grid | Longer-context total |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| SFT | 1/1 | 0/3 | 0/3 | 0/3 | 0/9 |
+| DPO | 1/1 | 0/3 | 0/3 | 0/3 | 0/9 |
+
+Each fraction is successful exact-code retrievals / cases. The 512-token
+control is from the pilot, not an additional grid case. At every grid length,
+each model saw the same three prompts, with the needle at 10%, 50%, and 90%
+depth. There was only one seed, so these counts are diagnostic observations,
+not estimates of general accuracy.
+
+## What each model generated
 
 The prompt was a synthetic archive containing one access-code sentence amid
 unrelated entries, followed by “What is the access code for [record]? Reply with
@@ -15,20 +28,23 @@ only the code.” The table describes the **raw generated text**, before removin
 the end-of-turn marker. `\n × 48` means 48 newline characters, not the literal
 characters `\` and `n`.
 
-| Prompt-token ceiling | Needle depth | SFT raw output | DPO raw output | Retrieval |
-| --- | ---: | --- | --- | --- |
-| 512 (control) | 50% | Correct code + `<end_of_turn>` | Correct code + `<end_of_turn>` | Both pass |
-| 2,048 | 10%, 50%, 90% | `<end_of_turn>` (one generated token) | `<end_of_turn>` (one generated token) | Both fail all three |
-| 8,192 | 10%, 50%, 90% | `\n × 48` | `\n × 48` | Both fail all three |
-| 16,384 | 10% | `\n × 48` | `\n\n\n<end_of_turn>` | Both fail |
-| 16,384 | 50% | `Entry 6666666666666666666666666666666666666666666666` | Same text | Both fail |
-| 16,384 | 90% | `\n × 48` | `\n × 48` | Both fail |
+| Token ceiling (actual) | Depth | Expected code | SFT raw output | SFT retrieved? | DPO raw output | DPO retrieved? |
+| --- | ---: | --- | --- | --- | --- | --- |
+| 512 (502; pilot control) | 50% | `NIAH-9437B276DEDB` | `NIAH-9437B276DEDB<end_of_turn>` | Yes | `NIAH-9437B276DEDB<end_of_turn>` | Yes |
+| 2,048 (2,035) | 10% | `NIAH-0E308D157B8B` | `<end_of_turn>` | No | `<end_of_turn>` | No |
+| 2,048 (2,031) | 50% | `NIAH-C1C7D0A14440` | `<end_of_turn>` | No | `<end_of_turn>` | No |
+| 2,048 (2,034) | 90% | `NIAH-8044ED98B5D7` | `<end_of_turn>` | No | `<end_of_turn>` | No |
+| 8,192 (8,181) | 10% | `NIAH-AEA9524DE948` | `\n × 48` | No | `\n × 48` | No |
+| 8,192 (8,179) | 50% | `NIAH-C00AFDC57E90` | `\n × 48` | No | `\n × 48` | No |
+| 8,192 (8,180) | 90% | `NIAH-890A5604EBB1` | `\n × 48` | No | `\n × 48` | No |
+| 16,384 (16,367) | 10% | `NIAH-8CC99D11741D` | `\n × 48` | No | `\n\n\n<end_of_turn>` | No |
+| 16,384 (16,370) | 50% | `NIAH-DBA0334BB7D2` | `Entry 6666666666666666666666666666666666666666666666` | No | Same as SFT | No |
+| 16,384 (16,372) | 90% | `NIAH-5285B027C313` | `\n × 48` | No | `\n × 48` | No |
 
-For example, at 2,048 tokens and 50% depth, the expected code was
-`NIAH-C1C7D0A14440`; **both** models generated only `<end_of_turn>`. At 8,192
-tokens and 50% depth, the expected code was `NIAH-C00AFDC57E90`; both generated
-48 newlines. At 512 tokens, the expected code was `NIAH-9437B276DEDB`, and both
-generated `NIAH-9437B276DEDB<end_of_turn>`.
+At 2K, both models immediately emitted the end-of-turn marker. At 8K, both
+generated only newlines until the 48-token limit. At 16K, neither produced a
+correct code; their outputs differed only in the 10%-depth case. “Same as SFT”
+in the 16K/50% row means the literal `Entry 666...` string in the SFT column.
 
 The [pilot raw JSON](../runs/dpo-needle-pilot-lumi-v1.json) contains all six
 512/2K/8K responses. The [grid raw JSON](../runs/dpo-needle-grid-lumi-v1.json)
@@ -65,3 +81,16 @@ protocol validated against the SFT checkpoint, then repeat the *same* prompts
 and decoding against DPO, ideally across several seeds and a broader
 long-context benchmark. Until then, neither DPO degradation nor retention of
 long-context performance is demonstrated by these results.
+
+### Follow-up prompt design
+
+This run called the target an “access code.” A more conventional passkey probe
+would use a single explicit statement such as `The passkey for record X is Y`
+and ask `What is the passkey for record X?` The repository's
+[existing NIAH generator](../src/post_training_eval/niah.py) uses that format,
+and [RULER's passkey-retrieval task](https://github.com/EleutherAI/lm-evaluation-harness/blob/main/lm_eval/tasks/ruler/README.md)
+is a useful external reference. That is a **proposed new test**, not a
+reinterpretation of the results above. Changing “access code” to “passkey”
+alone would not establish why both models produced empty or repetitive answers;
+the next run should first validate generation/template behavior with a short
+control and a passing 2K SFT case, then use identical prompts for both models.
